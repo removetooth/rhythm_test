@@ -97,6 +97,29 @@ song = {
     ]
 }
 
+
+def draw_dots(surface, length):
+    # used for 
+    length = int(length * 4)
+    if length <= 16:
+        for i in range(length):
+            x = (surface.get_width()/17) * (i%16+1)
+            radius = 5
+            if i % 4 == 0:
+                radius = 7
+            pygame.draw.circle(surface, [255,255,255], [int(x),int(surface.get_height()/4)], radius)
+            pygame.draw.circle(surface, [255,255,255], [int(x),int(surface.get_height()/4*3)], radius)
+    else:
+        for i in range(length):
+            x = (surface.get_width()/17) * (i%16+1)
+            y = surface.get_height()/6 * (int(i/16)+1)
+            radius = 5
+            if i % 4 == 0:
+                radius = 7
+            pygame.draw.circle(surface, [255,255,255], [int(x),int(y)], radius)
+            pygame.draw.circle(surface, [255,255,255], [int(x),int(y+surface.get_height()/2)], radius)
+		
+
 buttons = {pygame.K_z:'a',pygame.K_x:'b',pygame.K_c:'x',pygame.K_v:'y'}
 
 font_caption = pygame.font.Font("ode_to_idle_gaming.otf", 15)
@@ -104,6 +127,10 @@ font_caption = pygame.font.Font("ode_to_idle_gaming.otf", 15)
 bump = pygame.mixer.Sound('blip.ogg')
 sfx_oops = pygame.mixer.Sound('sfx/oops.wav')
 sfx_good = pygame.mixer.Sound('sfx/good.ogg')
+bar_surf = pygame.Surface([500,150])
+bar_surf.set_colorkey([255,0,255])
+bar_surf.fill([255,0,255])
+clock = pygame.time.Clock()
     
 print('Loading...')
 for i in song['sounds']:
@@ -124,23 +151,26 @@ pygame.mixer.music.play()
 pulsed = 0
 bar_no = 0
 bar = song['bars'][bar_no]
+draw_dots(bar_surf, bar['length'])
 bar_timestamp = 0
 next_input = 0
 no_presses = [None, 0]
 bar_beat_discrete = 0
 
 while pygame.mixer.music.get_busy():
+    clock.tick()
     events = pygame.event.get()
             
     pos = pygame.mixer.music.get_pos() / 1000 - song['offset']
     beat = pos/interval
     bar_beat = (pos-bar_timestamp)/interval
-    #pygame.display.set_caption(str(bar_beat_discrete))
+    #pygame.display.set_caption(str(clock.get_fps()))
     
     screen.fill([100,100,100])
     
     if bar['type'] == 'call':
 
+        screen.blit(bar_surf,[screen.get_width()/2-bar_surf.get_width()/2,25])
         screen.blit(captions[bar_no],[int(screen.get_width()/2 - captions[bar_no].get_width()/2),int(screen.get_height()*.70)])
 
         if next_input < len(bar['inputs']):
@@ -167,7 +197,8 @@ while pygame.mixer.music.get_busy():
             
 
     elif bar['type'] == 'response':
-
+        
+        screen.blit(bar_surf,[screen.get_width()/2-bar_surf.get_width()/2,25])
         screen.blit(captions[bar_no],[int(screen.get_width()/2 - captions[bar_no].get_width()/2),int(screen.get_height()*.70)])
         for event in events:
             if event.type == pygame.KEYDOWN:
@@ -194,7 +225,7 @@ while pygame.mixer.music.get_busy():
         pulsed = 1
         bump.play()
         bar_beat_discrete += 1
-        if bar_beat_discrete > bar['length']:
+        if bar_beat_discrete > bar['length']: # start a new bar
             if bar['type'] == 'response':
                 sfx_good.play()
             bar_no += 1
@@ -202,5 +233,8 @@ while pygame.mixer.music.get_busy():
             bar = song['bars'][bar_no]
             bar_timestamp = pos
             next_input = 0
+            bar_surf.fill([255,0,255])
+            draw_dots(bar_surf, bar['length'])
+            
     elif pos % interval > interval - interval / 2 and pos % interval < interval - interval / 4 and pulsed:
         pulsed = 0
