@@ -114,6 +114,7 @@ def get_pos_on_tl(surface, length, beat, player):
 def draw_dots(surface, length):
     # used for the timeline at the top
     length = int(length * 4)
+    surface.fill([255,0,255])
     for i in range(length):
         radius = 4
         if i % 4 == 0:
@@ -127,7 +128,7 @@ class HUDBeat:
         self.start_time = start_time
         self.pos = pos
         self.transparent = ghost
-        self.surface = pygame.Surface([50,50])
+        self.surface = pygame.Surface([[50,50], [40,40]][ghost])
         self.surface.set_colorkey([255,0,255])
         self.surface.set_alpha([255, 0][ghost])
         self.surface.fill([255,0,255])
@@ -309,7 +310,6 @@ while pygame.mixer.music.get_busy():
             bar = song['bars'][bar_no]
             bar_timestamp = pos
             next_input = 0
-            bar_surf.fill([255,0,255])
             draw_dots(bar_surf, bar['length'])
             
     elif pos % interval > interval - interval / 2 and pos % interval < interval - interval / 4 and pulsed:
