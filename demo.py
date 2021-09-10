@@ -101,11 +101,13 @@ def get_pos_on_tl(surface, length, beat, player):
     # used to find the graphical position on the timeline,
     # based on t, length of bar, and size of surface
     if length <= 4:
-        x = (surface.get_width()/17) * (beat*4%16 + 1)
         y = surface.get_height()/4
     else:
-        x = (surface.get_width()/17) * (beat*4%16 + 1)
         y = surface.get_height()/6 * (int(beat*4/16)+1)
+    if beat >= 0:
+        x = (surface.get_width()/17) * (beat*4%16 + 1)
+    else:
+        x = (surface.get_width()/17) * (beat*4 + 1)
     y += surface.get_height() / 2 * player
     return [int(x), int(y)]
 
@@ -225,6 +227,9 @@ while pygame.mixer.music.get_busy():
                 next_input += 1
 
         if bar_beat >= bar['length']-1 and bar_no + 1 < len(song['bars']):
+            pygame.draw.circle(beats_surf, [122,122,255],
+                           get_pos_on_tl(beats_surf,bar['length'],bar_beat-bar['length'],1),
+                           10)
             for event in events:
                 if event.type == pygame.KEYDOWN:
                     if event.key in buttons:
@@ -241,7 +246,7 @@ while pygame.mixer.music.get_busy():
                             sfx_oops.play()
                         hud_beats.append(HUDBeat(glyphs[buttons[event.key]],
                                              pos,
-                                             get_pos_on_tl(bar_surf,bar['length'],bar_beat,1)
+                                             get_pos_on_tl(bar_surf,bar['length'],bar_beat-bar['length'],1)
                                              )
                                          )
             
