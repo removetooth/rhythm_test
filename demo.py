@@ -190,6 +190,7 @@ bar_timestamp = 0
 next_input = 0
 no_presses = [None, 0]
 bar_beat_discrete = 0
+beats_so_far = 0
 hud_beats = []
 
 while pygame.mixer.music.get_busy():
@@ -284,13 +285,13 @@ while pygame.mixer.music.get_busy():
     if pos % interval < interval / 4 and not pulsed:
         pulsed = 1
         bump.play()
-        bar_beat_discrete += 1
-        if bar_beat_discrete > bar['length']: # start a new bar
+        bar_beat_discrete = int(beat) - beats_so_far
+        if bar_beat_discrete+1 > bar['length']: # start a new bar
             if bar['type'] == 'response':
                 sfx_good.play()
                 hud_beats = []
             bar_no += 1
-            bar_beat_discrete = 1
+            beats_so_far += bar['length']
             bar = song['bars'][bar_no]
             bar_timestamp = pos
             next_input = 0
