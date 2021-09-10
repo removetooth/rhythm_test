@@ -122,22 +122,26 @@ def draw_dots(surface, length):
         pygame.draw.circle(surface, [255,255,255], get_pos_on_tl(surface,length/4,i/4,1),radius)
     
 class HUDBeat:
-    def __init__(self, image, start_time, pos):
+    def __init__(self, image, start_time, pos, ghost = False):
         self.image = image
         self.start_time = start_time
         self.pos = pos
+        self.transparent = ghost
         self.surface = pygame.Surface([50,50])
         self.surface.set_colorkey([255,0,255])
+        self.surface.set_alpha([255, 0][ghost])
         self.surface.fill([255,0,255])
 
     def update(self, surface, pos):
         t = pos - self.start_time
         extra = 0
         if t < 0.25:
-            extra = int(40 * (0.25 - t))
+            extra = int(15 * (0.25 - t)/0.25)
+            if self.transparent:
+                self.surface.set_alpha(200*t/0.25)
         if t*9 <= math.pi*2:
             temp = pygame.transform.scale(self.image,
-                                          [int(math.fabs(math.cos(t*9)*self.surface.get_width()/2))+extra,
+                                          [int(math.fabs(math.cos(t*9*(1-self.transparent))*self.surface.get_width()/2))+extra,
                                            int(self.surface.get_height()/2)+extra])
             self.surface.fill([255,0,255])
             self.surface.blit(temp, [self.surface.get_width()/2 - temp.get_width()/2,
@@ -163,9 +167,8 @@ glyphs = {
 bar_surf = pygame.Surface([500,150])
 bar_surf.set_colorkey([255,0,255])
 bar_surf.fill([255,0,255])
-beats_surf = pygame.Surface([bar_surf.get_width(),bar_surf.get_height()])
-beats_surf.set_colorkey([255,0,255])
-beats_surf.fill([255,0,255])
+beats_surf = pygame.Surface([bar_surf.get_width(),bar_surf.get_height()], pygame.SRCALPHA)
+beats_surf.fill([0,0,0,0])
 clock = pygame.time.Clock()
     
 print('Loading song...')
@@ -205,7 +208,7 @@ while pygame.mixer.music.get_busy():
     #pygame.display.set_caption(str(clock.get_fps()))
     
     screen.fill([100,100,100])
-    beats_surf.fill([255,0,255])
+    beats_surf.fill([0,0,0,0])
     
     if bar['type'] == 'call':
 
@@ -222,6 +225,12 @@ while pygame.mixer.music.get_busy():
                 hud_beats.append(HUDBeat(glyphs[bar['inputs'][target]['button']],
                                          pos,
                                          get_pos_on_tl(bar_surf,bar['length'],target,0)
+                                         )
+                                 )
+                hud_beats.append(HUDBeat(glyphs[bar['inputs'][target]['button']], # bad implementation, handle properly later
+                                         pos,
+                                         get_pos_on_tl(bar_surf,bar['length'],target,1),
+                                         ghost = True
                                          )
                                  )
                 next_input += 1
