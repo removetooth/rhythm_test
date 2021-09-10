@@ -97,28 +97,53 @@ song = {
     ]
 }
 
+def get_pos_on_tl(surface, length, beat, player):
+    # used to find the graphical position on the timeline,
+    # based on t, length of bar, and size of surface
+    if length <= 4:
+        x = (surface.get_width()/17) * (beat*4%16 + 1)
+        y = surface.get_height()/4
+    else:
+        x = (surface.get_width()/17) * (beat*4%16 + 1)
+        y = surface.get_height()/6 * (int(beat*4/16)+1)
+    y += surface.get_height() / 2 * player
+    return [int(x), int(y)]
 
 def draw_dots(surface, length):
-    # used for 
+    # used for the timeline at the top
     length = int(length * 4)
-    if length <= 16:
-        for i in range(length):
-            x = (surface.get_width()/17) * (i%16+1)
-            radius = 5
-            if i % 4 == 0:
-                radius = 7
-            pygame.draw.circle(surface, [255,255,255], [int(x),int(surface.get_height()/4)], radius)
-            pygame.draw.circle(surface, [255,255,255], [int(x),int(surface.get_height()/4*3)], radius)
-    else:
-        for i in range(length):
-            x = (surface.get_width()/17) * (i%16+1)
-            y = surface.get_height()/6 * (int(i/16)+1)
-            radius = 5
-            if i % 4 == 0:
-                radius = 7
-            pygame.draw.circle(surface, [255,255,255], [int(x),int(y)], radius)
-            pygame.draw.circle(surface, [255,255,255], [int(x),int(y+surface.get_height()/2)], radius)
-		
+    for i in range(length):
+        radius = 4
+        if i % 4 == 0:
+            radius = 7
+        pygame.draw.circle(surface, [255,255,255], get_pos_on_tl(surface,length/4,i/4,0),radius)
+        pygame.draw.circle(surface, [255,255,255], get_pos_on_tl(surface,length/4,i/4,1),radius)
+    
+class HUDBeat:
+    def __init__(self, image, start_time, pos):
+        self.image = image
+        self.start_time = start_time
+        self.pos = pos
+        self.surface = pygame.Surface([50,50])
+        self.surface.set_colorkey([255,0,255])
+        self.surface.fill([255,0,255])
+
+    def update(self, surface, pos):
+        t = pos - self.start_time
+        extra = 0
+        if t < 0.25:
+            extra = int(40 * (0.25 - t))
+        if t*9 <= math.pi*2:
+            temp = pygame.transform.scale(self.image,
+                                          [int(math.fabs(math.cos(t*9)*self.surface.get_width()/2))+extra,
+                                           int(self.surface.get_height()/2)+extra])
+            self.surface.fill([255,0,255])
+            self.surface.blit(temp, [self.surface.get_width()/2 - temp.get_width()/2,
+                                     self.surface.get_height()/2 - temp.get_height()/2])
+        surface.blit(self.surface, [self.pos[0] - self.surface.get_width()/2,
+                                    self.pos[1] - self.surface.get_height()/2])
+        
+        
 
 buttons = {pygame.K_z:'a',pygame.K_x:'b',pygame.K_c:'x',pygame.K_v:'y'}
 
@@ -127,12 +152,21 @@ font_caption = pygame.font.Font("ode_to_idle_gaming.otf", 15)
 bump = pygame.mixer.Sound('blip.ogg')
 sfx_oops = pygame.mixer.Sound('sfx/oops.wav')
 sfx_good = pygame.mixer.Sound('sfx/good.ogg')
+glyphs = {
+    'a':pygame.image.load('img/button/z.png'),
+    'b':pygame.image.load('img/button/x.png'),
+    'x':pygame.image.load('img/button/c.png'),
+    'y':pygame.image.load('img/button/v.png')
+    }
 bar_surf = pygame.Surface([500,150])
 bar_surf.set_colorkey([255,0,255])
 bar_surf.fill([255,0,255])
+beats_surf = pygame.Surface([bar_surf.get_width(),bar_surf.get_height()])
+beats_surf.set_colorkey([255,0,255])
+beats_surf.fill([255,0,255])
 clock = pygame.time.Clock()
     
-print('Loading...')
+print('Loading song...')
 for i in song['sounds']:
     print("SFX:", i, song['sounds'][i])
     temp = pygame.mixer.Sound(song['sounds'][i])
@@ -156,6 +190,7 @@ bar_timestamp = 0
 next_input = 0
 no_presses = [None, 0]
 bar_beat_discrete = 0
+hud_beats = []
 
 while pygame.mixer.music.get_busy():
     clock.tick()
@@ -167,16 +202,25 @@ while pygame.mixer.music.get_busy():
     #pygame.display.set_caption(str(clock.get_fps()))
     
     screen.fill([100,100,100])
+    beats_surf.fill([255,0,255])
     
     if bar['type'] == 'call':
 
         screen.blit(bar_surf,[screen.get_width()/2-bar_surf.get_width()/2,25])
         screen.blit(captions[bar_no],[int(screen.get_width()/2 - captions[bar_no].get_width()/2),int(screen.get_height()*.70)])
+        pygame.draw.circle(beats_surf, [255,122,122],
+                           get_pos_on_tl(beats_surf,bar['length'],bar_beat,0),
+                           10)
 
         if next_input < len(bar['inputs']):
             target = list(bar['inputs'])[next_input]
             if bar_beat >= target:
-                song['sounds'][bar['inputs'][target]['sound']].play()
+                song['sounds'][bar['inputs'][target]['sound']].play() # i've got to make this cleaner
+                hud_beats.append(HUDBeat(glyphs[bar['inputs'][target]['button']],
+                                         pos,
+                                         get_pos_on_tl(bar_surf,bar['length'],target,0)
+                                         )
+                                 )
                 next_input += 1
 
         if bar_beat >= bar['length']-1 and bar_no + 1 < len(song['bars']):
@@ -194,12 +238,21 @@ while pygame.mixer.music.get_busy():
                             song['sounds'][song['bars'][bar_no+1]['sfx'][buttons[event.key]][no_presses[1]]].play()
                         else:
                             sfx_oops.play()
+                        hud_beats.append(HUDBeat(glyphs[buttons[event.key]],
+                                             pos,
+                                             get_pos_on_tl(bar_surf,bar['length'],bar_beat,1)
+                                             )
+                                         )
             
 
     elif bar['type'] == 'response':
         
         screen.blit(bar_surf,[screen.get_width()/2-bar_surf.get_width()/2,25])
         screen.blit(captions[bar_no],[int(screen.get_width()/2 - captions[bar_no].get_width()/2),int(screen.get_height()*.70)])
+        pygame.draw.circle(beats_surf, [122,122,255],
+                           get_pos_on_tl(beats_surf,bar['length'],bar_beat,1),
+                           10)
+
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key in buttons:
@@ -214,11 +267,18 @@ while pygame.mixer.music.get_busy():
                         song['sounds'][bar['sfx'][buttons[event.key]][no_presses[1]]].play()
                     else:
                         sfx_oops.play()
+                    hud_beats.append(HUDBeat(glyphs[buttons[event.key]],
+                                         pos,
+                                         get_pos_on_tl(bar_surf,bar['length'],bar_beat,1)
+                                         )
+                                     )
                 
     pygame.draw.circle(screen,(255,255,255), [
         int(screen.get_width()*.25) + (pos/4%interval) * int(screen.get_width()*.50)/interval,
         int(screen.get_height()*.95) - 50*math.fabs(math.sin(math.pi/interval*pos))
         ], 5)
+    [i.update(beats_surf, pos) for i in hud_beats]
+    screen.blit(beats_surf,[screen.get_width()/2-beats_surf.get_width()/2,25])
     
     pygame.display.flip()
     if pos % interval < interval / 4 and not pulsed:
@@ -228,6 +288,7 @@ while pygame.mixer.music.get_busy():
         if bar_beat_discrete > bar['length']: # start a new bar
             if bar['type'] == 'response':
                 sfx_good.play()
+                hud_beats = []
             bar_no += 1
             bar_beat_discrete = 1
             bar = song['bars'][bar_no]
