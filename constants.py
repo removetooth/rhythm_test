@@ -1,9 +1,12 @@
 import pygame
 
-chart_folder = "levels/test"
+chart = "test"
 
+prep_time = 1
 # this is fairly roundabout and can probably just be replaced with keycodes
-buttons = {pygame.K_z:'a',pygame.K_x:'b',pygame.K_c:'x',pygame.K_v:'y'}
+buttons = {pygame.K_z:'a',pygame.K_x:'b',pygame.K_c:'x',pygame.K_v:'y',
+           pygame.K_UP:'up',pygame.K_DOWN:'down',pygame.K_LEFT:'left',pygame.K_RIGHT:'right',
+           pygame.K_w:'up',pygame.K_s:'down',pygame.K_a:'left',pygame.K_d:'right'}
 
 ui_screensize = [640,480]
 ui_colorkey = [255,0,255]
@@ -14,7 +17,11 @@ ui_glyphs = {
     'a':pygame.image.load('img/button/z.png'),
     'b':pygame.image.load('img/button/x.png'),
     'x':pygame.image.load('img/button/c.png'),
-    'y':pygame.image.load('img/button/v.png')
+    'y':pygame.image.load('img/button/v.png'),
+    'up':pygame.image.load('img/button/kb_up.png'),
+    'down':pygame.image.load('img/button/kb_down.png'),
+    'left':pygame.image.load('img/button/kb_left.png'),
+    'right':pygame.image.load('img/button/kb_right.png'),
     }
 
 sfx_blip = pygame.mixer.Sound('sfx/blip.ogg')
