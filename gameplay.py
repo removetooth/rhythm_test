@@ -184,7 +184,7 @@ class GameManager: # standard gameplay
         self.icons_length[1] = bar['length']
         self.icons_pos[1] = beat
         GameManager.handle_input(self, bar, pre=1)
-        prog = bar['length'] * (constants.prep_time - beat) / constants.prep_time
+        prog = bar['length'] * (constants.prep_time + beat) / constants.prep_time
         if self.next_ghost_input[0] < len(bar['inputs']):
             target = bar['inputs'][self.next_ghost_input[0]]
             if prog >= target['beat']:
