@@ -2,6 +2,7 @@ from glob import glob
 from os.path import basename, splitext
 import math
 import json
+import time
 
 import pygame
 pygame.init()
@@ -29,8 +30,10 @@ while 1:
            event.key == pygame.K_ESCAPE:
             if not paused:
                 paused = True
+                pauseScreen.paused_at = time.time()
                 pygame.mixer.stop()
                 pygame.mixer.music.pause()
+                constants.sfx_pause.play()
             else:
                 paused = False
                 pygame.mixer.music.unpause()

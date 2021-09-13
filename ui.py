@@ -1,10 +1,12 @@
-import pygame, math, time
+import pygame, math, time, sys
 import constants
 
 screensize = constants.ui_screensize
 colorkey = constants.ui_colorkey
 font_caption = constants.ui_font_caption
 font_praise = constants.ui_font_praise
+font_button = constants.ui_font_button
+font_pauseheader = constants.ui_font_pauseheader
 tl_size = constants.ui_tl_size
 alpha = constants.ui_alpha
 pausebg = constants.ui_pausebg
@@ -75,7 +77,7 @@ class UIButton:
             int(self.center[1] - self.size[1] / 2)
             ]
         self.text = text
-        self.text_surf = font_caption.render(self.text,0,[255,255,255])
+        self.text_surf = font_button.render(self.text,0,[255,255,255])
         self.func_onclick = func_onclick
         self.args = args
         self.last_interaction = 0
@@ -118,7 +120,8 @@ class UIButton:
 class PauseScreen:
     def __init__(self):
         self.buttons = [ # placeholder for now
-            UIButton("resume", [screensize[0]/2, screensize[1]/2], [100,30], pygame.mixer.music.unpause)
+            UIButton("resume", [screensize[0]/2, screensize[1]/2-30], [100,30], pygame.mixer.music.unpause),
+            UIButton("quit", [screensize[0]/2, screensize[1]/2+30], [100,30], sys.exit),
             ]
         self.gray = pygame.Surface(screensize)
         self.gray.fill([0,0,0])
@@ -127,6 +130,8 @@ class PauseScreen:
         self.bg.set_colorkey(colorkey)
         self.bg.fill([0,0,0])
         self.bg_image = pygame.transform.scale(pausebg, screensize)
+        self.paused_at = 0
+        self.header = font_pauseheader.render("Paused", 0, [255,255,255])
 
     def update(self, events):
         for event in events:
@@ -136,16 +141,18 @@ class PauseScreen:
                 [i.on_click() for i in self.buttons]
 
     def draw(self, screen):
+        interp = 0#1-min(1, (time.time()-self.paused_at)/0.15)
         self.bg.blit(self.bg_image, [-(time.time()*50%screensize[0]),0])
         self.bg.blit(self.bg_image, [-(time.time()*50%screensize[0])+screensize[0],0])
         pygame.draw.polygon(self.bg, colorkey, [
-            [0,screensize[1]],
-            [screensize[0]/4,0],
-            [screensize[0],0],
-            [3*screensize[0]/4,screensize[1]]
+            [0-(screensize[0]/4)*interp,screensize[1]],
+            [screensize[0]/4-(screensize[0]/4)*interp,0],
+            [screensize[0]+(screensize[0]/4)*interp,0],
+            [3*screensize[0]/4+(screensize[0]/4)*interp,screensize[1]]
             ])
         screen.blit(self.gray, [0,0])
         screen.blit(self.bg, [0,0])
+        screen.blit(self.header, [30,20])
         [i.draw(screen) for i in self.buttons]
 
     

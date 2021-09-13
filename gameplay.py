@@ -41,12 +41,16 @@ class GameManager: # standard gameplay
         self.bar_no = 0
         self.bar = self.song['bars'][self.bar_no]
         self.bar_beat = 0
+        self.last_beat = 0
         self.last_bar_change = 0
 
     def update(self, t, events):
         self.events = events
         self.pos = t / 1000 - self.song['offset']
         self.beat = self.pos / self.interval
+        if self.beat - self.last_beat > 0.25: # prevent unpause jank
+            return
+        self.last_beat = self.beat
         self.bar_beat = self.beat - self.last_bar_change
         [i.update(self.pos) for i in self.tl_beats]
 
