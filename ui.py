@@ -4,9 +4,11 @@ import constants
 screensize = constants.ui_screensize
 colorkey = constants.ui_colorkey
 font_caption = constants.ui_font_caption
+font_praise = constants.ui_font_praise
 tl_size = constants.ui_tl_size
 alpha = constants.ui_alpha
 glyphs = constants.ui_glyphs
+praise = constants.ui_praise
 
 def get_pos_on_tl(surface, length, beat, player):
     # used to find the graphical position on the timeline,

@@ -13,16 +13,8 @@ class GameManager: # standard gameplay
             self.song = json.loads(f.read())
             f.close()
 
-        self.sounds = {splitext(basename(i))[0]: i for i in glob(path + "sfx/*")}
-        for i in self.sounds:
-            print("SFX:", i, self.sounds[i])
-            temp = pygame.mixer.Sound(self.sounds[i])
-            self.sounds[i] = temp
-
-        self.captions = []
-        for i in self.song['bars']:
-            print("Rendering caption:", i['text'])
-            self.captions.append(ui.font_caption.render(i['text'],0,[255,255,255]))
+        self.sounds = {splitext(basename(i))[0]: pygame.mixer.Sound(i) for i in glob(path + "sfx/*")}
+        self.captions = [ui.font_caption.render(i['text'],0,[255,255,255]) for i in self.song['bars']]
         
         self.tl_dots_surf = pygame.Surface(ui.tl_size)
         self.tl_dots_surf.set_colorkey(ui.colorkey)
@@ -31,12 +23,16 @@ class GameManager: # standard gameplay
         self.tl_beats_surf.fill(ui.alpha)
         self.tl_beats = []
 
+        self.praise = [0,0]
+
         self.icons_pos = [0,0]
         self.icons_enabled = [0,0]
         self.icons_length = [0,0]
 
         self.events = []
         self.no_presses = [None, 0]
+        self.next_input = [0,0]
+        self.next_ghost_input = [0,0]
 
         self.interval = 60 / self.song['bpm']
         self.pulsed = 0
@@ -46,8 +42,6 @@ class GameManager: # standard gameplay
         self.bar = self.song['bars'][self.bar_no]
         self.bar_beat = 0
         self.last_bar_change = 0
-        self.next_input = [0,0]
-        self.next_ghost_input = [0,0]
 
     def update(self, t):
         self.events = pygame.event.get()
@@ -92,12 +86,21 @@ class GameManager: # standard gameplay
                                ui.get_pos_on_tl(self.tl_beats_surf,self.icons_length[1],self.icons_pos[1],1),
                                10)
         screen.blit(self.tl_beats_surf,[screen.get_width()/2-self.tl_beats_surf.get_width()/2,25])
+
+        if self.pos - self.praise[1] < 0.3:
+            praise_surf = ui.praise[self.praise[0]]
+            screen.blit(praise_surf, [
+                screen.get_width()/2 - praise_surf.get_width()/2,
+                30 + ui.tl_size[1]
+                ])
+            
         pass
 
-    def handle_input(self, bar, player = 1, pre = 0): # yes, this is awful. i'll try to iterate on it
+    def handle_input(self, bar, player = 1, pre = False): # yes, this is awful. i'll try to iterate on it
         for event in self.events:
             if event.type == pygame.KEYDOWN:
                 if event.key in constants.buttons:
+                    barpos = self.bar_beat - bar['length']*pre
                     button = constants.buttons[event.key]
                     if button in bar['sfx']:
                         if self.no_presses[0] == button:
@@ -105,12 +108,37 @@ class GameManager: # standard gameplay
                         else:
                             self.no_presses = [button, 0]
                         self.sounds[bar['sfx'][constants.buttons[event.key]][self.no_presses[1]]].play()
+                        highest_praise = 0
+                        target_input = None
+                        for i in bar['inputs']: # iterate on / figure out a better, cleaner implementation for this
+                            if abs(barpos - i['beat']) < 1/32 and highest_praise < 4:
+                                self.praise[0] = 0
+                                highest_praise = 4
+                                target_input = i['button']
+                            elif abs(barpos - i['beat']) < 1/16 and highest_praise < 3:
+                                self.praise[0] = 1
+                                highest_praise = 3
+                                target_input = i['button']
+                            elif abs(barpos - i['beat']) < 1/8 and highest_praise < 2:
+                                self.praise[0] = 2
+                                highest_praise = 2
+                                target_input = i['button']
+                            elif abs(barpos - i['beat']) < 1/4 and highest_praise < 1:
+                                self.praise[0] = 3
+                                highest_praise = 1
+                                target_input = i['button']
+                        if button != target_input:
+                            self.praise[0] = 6
+                        if highest_praise == 0:
+                            self.praise[0] = 4
                     else:
                         constants.sfx_oops.play()
+                        self.praise[0] = 5
+                    self.praise[1] = self.pos
                     self.tl_beats.append(ui.HUDBeat(
                         ui.glyphs[button],
                         self.pos,
-                        ui.get_pos_on_tl(self.tl_dots_surf, bar['length'], self.bar_beat - bar['length']*pre, player)
+                        ui.get_pos_on_tl(self.tl_dots_surf, bar['length'], barpos, player)
                         ))
                         
 
@@ -159,7 +187,7 @@ class GameManager: # standard gameplay
         self.icons_enabled[0] = True
         self.icons_length[0] = bar['length']
         self.icons_pos[0] = beat
-        #prog = bar['length'] * (constants.prep_time - beat) / constants.prep_time
+        prog = bar['length'] * (constants.prep_time - beat) / constants.prep_time
         #if self.next_ghost_input[0] < len(bar['inputs']):
         #    target = bar['inputs'][self.next_ghost_input[0]]
         #    if prog >= target['beat']:
@@ -185,8 +213,8 @@ class GameManager: # standard gameplay
         self.icons_pos[1] = beat
         GameManager.handle_input(self, bar, pre=1)
         prog = bar['length'] * (constants.prep_time + beat) / constants.prep_time
-        if self.next_ghost_input[0] < len(bar['inputs']):
-            target = bar['inputs'][self.next_ghost_input[0]]
+        if self.next_ghost_input[1] < len(bar['inputs']):
+            target = bar['inputs'][self.next_ghost_input[1]]
             if prog >= target['beat']:
                 self.tl_beats.append(ui.HUDBeat(
                     ui.glyphs[target['button']],
@@ -194,7 +222,7 @@ class GameManager: # standard gameplay
                     ui.get_pos_on_tl(self.tl_dots_surf,bar['length'],target['beat'],1),
                     ghost = True
                     ))
-                self.next_ghost_input[0] += 1
+                self.next_ghost_input[1] += 1
         pass
 
     def bar_simultaneous(self, bar, beat):
