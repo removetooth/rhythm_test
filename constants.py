@@ -27,10 +27,10 @@ ui_glyphs = {
 ui_praise = [
     ui_font_praise.render('perfect!', 0, [200,200,0]),
     ui_font_praise.render('great!', 0, [0,255,0]),
-    ui_font_praise.render('good', 0, [100,100,255]),
-    ui_font_praise.render('eh', 0, [0,0,100]),
+    ui_font_praise.render('good', 0, [200,200,255]),
+    ui_font_praise.render('eh...', 0, [0,0,200]),
     ui_font_praise.render('miss', 0, [200,0,0]),
-    ui_font_praise.render('oops', 0, [200,0,0]),
+    ui_font_praise.render('oops!', 0, [200,0,0]),
     ui_font_praise.render('wrong button', 0, [200,100,0])
     ]
 

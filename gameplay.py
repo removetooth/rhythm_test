@@ -23,10 +23,10 @@ class GameManager: # standard gameplay
         self.tl_beats_surf.fill(ui.alpha)
         self.tl_beats = []
 
-        self.praise = [0,0]
+        self.praise = [0,-0.3]
 
         self.icons_pos = [0,0]
-        self.icons_enabled = [0,0]
+        self.icons_enabled = [False,False]
         self.icons_length = [0,0]
 
         self.events = []
@@ -91,7 +91,7 @@ class GameManager: # standard gameplay
             praise_surf = ui.praise[self.praise[0]]
             screen.blit(praise_surf, [
                 screen.get_width()/2 - praise_surf.get_width()/2,
-                30 + ui.tl_size[1]
+                30 + ui.tl_size[1] - 10*(self.pos-self.praise[1])/0.3
                 ])
             
         pass
