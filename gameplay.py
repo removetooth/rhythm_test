@@ -43,11 +43,12 @@ class GameManager: # standard gameplay
         self.bar_beat = 0
         self.last_bar_change = 0
 
-    def update(self, t):
-        self.events = pygame.event.get()
+    def update(self, t, events):
+        self.events = events
         self.pos = t / 1000 - self.song['offset']
         self.beat = self.pos / self.interval
         self.bar_beat = self.beat - self.last_bar_change
+        [i.update(self.pos) for i in self.tl_beats]
 
         bar_handlers.get(self.bar['type'], GameManager.bar_break)(self, self.bar, self.bar_beat)
         if self.bar_no + 1 < len(self.song['bars']) and self.bar_beat >= self.bar['length'] - constants.prep_time:
@@ -76,7 +77,7 @@ class GameManager: # standard gameplay
                     [int(screen.get_width()/2 - self.captions[self.bar_no].get_width()/2),
                      int(screen.get_height()*.70)])
         screen.blit(self.tl_dots_surf,[screen.get_width()/2-self.tl_dots_surf.get_width()/2,25])
-        [i.update(self.tl_beats_surf, self.pos) for i in self.tl_beats]
+        [i.draw(self.tl_beats_surf) for i in self.tl_beats]
         if self.icons_enabled[0]:
             pygame.draw.circle(self.tl_beats_surf, [255,122,122],
                                ui.get_pos_on_tl(self.tl_beats_surf,self.icons_length[0],self.icons_pos[0],0),
@@ -93,8 +94,6 @@ class GameManager: # standard gameplay
                 screen.get_width()/2 - praise_surf.get_width()/2,
                 30 + ui.tl_size[1] - 10*(self.pos-self.praise[1])/0.3
                 ])
-            
-        pass
 
     def handle_input(self, bar, player = 1, pre = False): # yes, this is awful. i'll try to iterate on it
         for event in self.events:

@@ -14,6 +14,7 @@ ui_font_caption = pygame.font.Font("ode_to_idle_gaming.otf", 15)
 ui_font_praise = pygame.font.Font("ode_to_idle_gaming.otf", 15)
 ui_tl_size = [500, 150]
 ui_alpha = [0,0,0,0]
+ui_pausebg = pygame.image.load('img/ui/pause_bg.png')
 ui_glyphs = {
     'a':pygame.image.load('img/button/z.png'),
     'b':pygame.image.load('img/button/x.png'),
