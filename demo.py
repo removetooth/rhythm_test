@@ -45,6 +45,6 @@ while 1:
         pauseScreen.draw(screen)
     pygame.display.flip()
     clock.tick()
-    #pygame.display.set_caption(str(clock.get_fps()))
+    pygame.display.set_caption(str(int(clock.get_fps())) + " FPS")
 
     

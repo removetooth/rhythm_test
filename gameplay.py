@@ -61,7 +61,7 @@ class GameManager: # standard gameplay
 
         if self.pos % self.interval < self.interval / 4 and not self.pulsed: # at beginning of beat
             self.pulsed = 1
-            constants.sfx_blip.play()
+            #constants.sfx_blip.play()
             if int(self.beat) - self.last_bar_change + 1 > self.bar['length']:
                 GameManager.start_new_bar(self)
         elif self.pos % self.interval > self.interval - self.interval / 2 and \

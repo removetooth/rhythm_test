@@ -141,18 +141,18 @@ class PauseScreen:
                 [i.on_click() for i in self.buttons]
 
     def draw(self, screen):
-        interp = 0#1-min(1, (time.time()-self.paused_at)/0.15)
+        interp = 1-min(1, (time.time()-self.paused_at)/0.15)
         self.bg.blit(self.bg_image, [-(time.time()*50%screensize[0]),0])
         self.bg.blit(self.bg_image, [-(time.time()*50%screensize[0])+screensize[0],0])
         pygame.draw.polygon(self.bg, colorkey, [
-            [0-(screensize[0]/4)*interp,screensize[1]],
-            [screensize[0]/4-(screensize[0]/4)*interp,0],
-            [screensize[0]+(screensize[0]/4)*interp,0],
-            [3*screensize[0]/4+(screensize[0]/4)*interp,screensize[1]]
+            [0,screensize[1]+(screensize[1]/4)*interp],
+            [0,screensize[1]/4-(screensize[1]/4)*interp],
+            [screensize[0],0-(screensize[1]/4)*interp],
+            [screensize[0],3*screensize[1]/4+(screensize[1]/4)*interp]
             ])
         screen.blit(self.gray, [0,0])
         screen.blit(self.bg, [0,0])
-        screen.blit(self.header, [30,20])
+        screen.blit(self.header, [30-(screensize[0]/4)*interp,20])
         [i.draw(screen) for i in self.buttons]
 
     
