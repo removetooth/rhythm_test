@@ -77,8 +77,10 @@ class GameManager: # standard gameplay
             int(screen.get_width()*.25) + (self.pos/4%self.interval) * int(screen.get_width()*.50)/self.interval,
             int(screen.get_height()*.95) - 50*abs(math.sin(math.pi/self.interval*self.pos))
             ], 5)
-        screen.blit(self.captions[self.bar_no],
-                    [int(screen.get_width()/2 - self.captions[self.bar_no].get_width()/2),
+        caption = self.captions[self.bar_no] if self.bar_no < len(self.song['bars']) \
+                    else pygame.Surface([0,0])
+        screen.blit(caption,
+                    [int(screen.get_width()/2 - caption.get_width()/2),
                      int(screen.get_height()*.70)])
         screen.blit(self.tl_dots_surf,[screen.get_width()/2-self.tl_dots_surf.get_width()/2,25])
         [i.draw(self.tl_beats_surf) for i in self.tl_beats]
@@ -149,7 +151,9 @@ class GameManager: # standard gameplay
 
     def start_new_bar(self):
         self.last_bar_change = int(self.beat)
-        next_bar = self.song['bars'][self.bar_no+1]
+        self.bar_no += 1
+        next_bar = self.song['bars'][self.bar_no] if self.bar_no < len(self.song['bars']) \
+                   else {'text':'','type':'break','length':1}
         if self.bar['type'] == 'call':    # holy shit this is the worst
             self.next_input[0] = 0
             self.icons_enabled[0] = False
@@ -164,9 +168,12 @@ class GameManager: # standard gameplay
         elif next_bar['type'] == 'response':
             self.next_ghost_input[1] = 0
 
-        self.bar_no += 1
-        self.bar = self.song['bars'][self.bar_no]
-        ui.draw_dots(self.tl_dots_surf, self.bar['length'])
+        if next_bar['type'] == 'break':
+            self.tl_dots_surf.fill(ui.colorkey)
+        else:
+            ui.draw_dots(self.tl_dots_surf, next_bar['length'])
+
+        self.bar = next_bar
         
         pass
 

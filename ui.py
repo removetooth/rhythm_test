@@ -137,7 +137,7 @@ class PauseScreen:
         for event in events:
             if event.type == pygame.MOUSEMOTION:
                 [i.on_mouse_move(event) for i in self.buttons]
-            elif event.type == pygame.MOUSEBUTTONUP:
+            elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 [i.on_click() for i in self.buttons]
 
     def draw(self, screen):
