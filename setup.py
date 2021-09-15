@@ -6,9 +6,9 @@ cx_Freeze.setup(
     name="rhythm_test",
     options={"build_exe": {"packages":["pygame"],
                            "include_files":["ode_to_idle_gaming.otf",
+                                            "img",
                                             "levels",
-                                            "sfx",
-                                            "blip.ogg"
+                                            "sfx"
                                             ]}},
     executables = executables
 
