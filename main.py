@@ -3,6 +3,7 @@ from os.path import basename, splitext
 import math
 import json
 import time
+import sys
 
 import pygame
 pygame.init()
@@ -26,6 +27,8 @@ while 1:
     paused = not pygame.mixer.music.get_busy()
     events = pygame.event.get()
     for event in events:
+        if event.type == pygame.QUIT:
+            sys.exit()
         if event.type == pygame.KEYDOWN and \
            event.key == pygame.K_ESCAPE:
             if not paused:
