@@ -1,7 +1,5 @@
 import pygame
 
-chart = "test"
-
 prep_time = 1
 # this is fairly roundabout and can probably just be replaced with keycodes
 buttons = {pygame.K_z:'a',pygame.K_x:'b',pygame.K_c:'x',pygame.K_v:'y',
@@ -41,3 +39,6 @@ sfx_blip = pygame.mixer.Sound('sfx/blip.ogg')
 sfx_oops = pygame.mixer.Sound('sfx/oops.wav')
 sfx_good = pygame.mixer.Sound('sfx/good.ogg')
 sfx_pause = pygame.mixer.Sound('sfx/pause.ogg')
+
+GAMEPLAY = 0
+CHART_SELECT = 1

@@ -1,0 +1,83 @@
+{
+    "bpm":163,
+    "offset":0.02,
+    "bars":[
+        
+        {
+            "text":"",
+            "type":"break",
+            "length":8
+        },
+        
+        {
+            "text":"Shut the fuck up.",
+            "type":"call",
+            "length":4,
+            "inputs":[
+                {"beat":0, "button":"a", "sound":"stfu_shut"},
+                {"beat":1, "button":"b", "sound":"stfu_the"},
+                {"beat":1.5, "button":"x", "sound":"stfu_fuck"},
+                {"beat":2.5, "button":"x", "sound":"stfu_up"}
+            ]
+        },
+        
+        {
+            "text":"Shut the fuck up!",
+            "type":"response",
+            "length":4,
+            "sfx":{
+                "a":["pl_stfu_shut"],
+                "b":["pl_stfu_the"],
+                "x":["pl_stfu_fuck","pl_stfu_up"]
+            },
+            "inputs":[
+                {"beat":0, "button":"a"},
+                {"beat":1, "button":"b"},
+                {"beat":1.5, "button":"x"},
+                {"beat":2.5, "button":"x"}
+            ]
+        },
+        
+        {
+            "text":"Shut the fuck, the fuck, the fuck, the fuck up.",
+            "type":"call",
+            "length":8,
+            "inputs":[
+                {"beat":0, "button":"a", "sound":"stfu_shut"},
+                {"beat":1, "button":"b", "sound":"stfu_the"},
+                {"beat":1.5, "button":"x", "sound":"stfu_fuck"},
+                {"beat":2.5, "button":"b", "sound":"stfu_the"},
+                {"beat":3.0, "button":"x", "sound":"stfu_fuck"},
+                {"beat":4.0, "button":"b", "sound":"stfu_the"},
+                {"beat":4.5, "button":"x", "sound":"stfu_fuck"},
+                {"beat":5.5, "button":"b", "sound":"stfu_the"},
+                {"beat":6.0, "button":"x", "sound":"stfu_fuck"},
+                {"beat":7.0, "button":"x", "sound":"stfu_up"}
+            ]
+        },
+        
+        {
+            "text":"Shut the fuck, the fuck, the fuck, the fuck up!",
+            "type":"response",
+            "length":8,
+            "sfx":{
+                "a":["pl_stfu_shut"],
+                "b":["pl_stfu_the"],
+                "x":["pl_stfu_fuck","pl_stfu_up"]
+            },
+            "inputs":[
+                {"beat":0, "button":"a"},
+                {"beat":1, "button":"b"},
+                {"beat":1.5, "button":"x"},
+                {"beat":2.5, "button":"b"},
+                {"beat":3.0, "button":"x"},
+                {"beat":4.0, "button":"b"},
+                {"beat":4.5, "button":"x"},
+                {"beat":5.5, "button":"b"},
+                {"beat":6.0, "button":"x"},
+                {"beat":7.0, "button":"x"}
+            ]
+        }
+        
+    ]
+}

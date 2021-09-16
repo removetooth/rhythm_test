@@ -15,37 +15,47 @@ screen = pygame.display.set_mode(ui.screensize)
 
 clock = pygame.time.Clock()
 
-gameManager = gameplay.GameManager(constants.chart)
-pauseScreen = ui.PauseScreen()
-paused = False
-pygame.mixer.music.load('levels/' + constants.chart + '/music.mp3')
-pygame.mixer.music.play()
+class StateManager:
+    def __init__(self):
+        self.state = constants.CHART_SELECT
+        self.chartSelect = ui.ChartSelectScreen()
+        self.chartSelect.buttons[0].func_onclick = self.startGame
+        self.gameManager = None
 
-# all of this should go into a game manager object later on
+    def update(self, events):
+        if self.state == constants.CHART_SELECT:
+            self.chartSelect.buttons[0].args = [basename(self.chartSelect.songs[self.chartSelect.index]['path'])]
+            self.chartSelect.update(events)
+        if self.state == constants.GAMEPLAY:
+            self.gameManager.update(events)
+            
+    def draw(self, screen):
+        if self.state == constants.CHART_SELECT:
+            self.chartSelect.draw(screen)
+        if self.state == constants.GAMEPLAY:
+            self.gameManager.draw(screen)
+
+    def startGame(self, chart):
+        pygame.mixer.stop()
+        pygame.mixer.music.stop()
+        self.gameManager = gameplay.GameManager(chart)
+        self.gameManager.pauseScreen.buttons[1].func_onclick = self.quitToSelection
+        self.state = constants.GAMEPLAY
+
+    def quitToSelection(self):
+        self.chartSelect = ui.ChartSelectScreen()
+        self.chartSelect.buttons[0].func_onclick = self.startGame
+        self.state = constants.CHART_SELECT
+
+stateManager = StateManager()
 
 while 1:
-    paused = not pygame.mixer.music.get_busy()
     events = pygame.event.get()
     for event in events:
         if event.type == pygame.QUIT:
             sys.exit()
-        if event.type == pygame.KEYDOWN and \
-           event.key == pygame.K_ESCAPE:
-            if not paused:
-                paused = True
-                pauseScreen.paused_at = time.time()
-                pygame.mixer.stop()
-                pygame.mixer.music.pause()
-                constants.sfx_pause.play()
-            else:
-                paused = False
-                pygame.mixer.music.unpause()
-    if not paused:
-        gameManager.update(pygame.mixer.music.get_pos(), events)
-    gameManager.draw(screen)
-    if paused:
-        pauseScreen.update(events)
-        pauseScreen.draw(screen)
+    stateManager.update(events)
+    stateManager.draw(screen)
     pygame.display.flip()
     clock.tick()
     pygame.display.set_caption(str(int(clock.get_fps())) + " FPS")

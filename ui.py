@@ -1,4 +1,5 @@
-import pygame, math, time, sys
+import pygame, math, time, sys, json
+from glob import glob
 import constants
 
 screensize = constants.ui_screensize
@@ -117,6 +118,7 @@ class UIButton:
             ])
         screen.blit(self.surface, self.corner)
 
+
 class PauseScreen:
     def __init__(self):
         self.buttons = [ # placeholder for now
@@ -153,6 +155,67 @@ class PauseScreen:
         screen.blit(self.gray, [0,0])
         screen.blit(self.bg, [0,0])
         screen.blit(self.header, [30-(screensize[0]/4)*interp,20])
+        [i.draw(screen) for i in self.buttons]
+
+
+class ChartSelectScreen:
+    def __init__(self):
+        self.index = 0
+        self.songs = []
+        for i in glob('levels/*'):
+            try:
+                meta_f = open(i+'/meta.json','r')
+                meta = json.loads(meta_f.read())
+                meta_f.close() # i could shorten a lot of this if i skipped this line
+            except:
+                meta = {}
+            self.songs.append(
+                {
+                    'path': i,
+                    'name_text_header': font_pauseheader.render(
+                        meta.get('name', 'Untitled Chart'), 0, [255,255,255]),
+                    'name_text': font_caption.render(
+                        meta.get('name', 'Untitled Chart'), 0, [255,255,255]),
+                    'chart_author_text': font_caption.render(
+                        "By " + meta.get('chart_author', 'Unknown Author'), 0, [255,255,255])
+                }
+            )
+            
+        self.buttons = [
+            UIButton(
+                "start",
+                [screensize[0]/2, screensize[1]-30],
+                [100,30],
+                print,
+                ["???"]
+            )
+        ]
+
+    def update(self, events):
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_DOWN:
+                    self.index = (self.index + 1) % len(self.songs)
+                if event.key == pygame.K_UP:
+                    self.index = (self.index - 1) % len(self.songs)
+            if event.type == pygame.MOUSEMOTION:
+                [i.on_mouse_move(event) for i in self.buttons]
+            elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                [i.on_click() for i in self.buttons]
+
+    def draw(self, screen):
+        scroll = 0
+        song = self.songs[self.index]
+        header = song['name_text_header']
+        author = song['chart_author_text']
+        screen.fill([70,70,70])
+        for i in range(self.index-2,self.index+3):
+            if 0 <= i < len(self.songs):
+                song_temp = self.songs[i]
+                screen.blit(song_temp['name_text'], [50+20*(i==self.index), 200+scroll])
+            scroll += 30
+        screen.blit(header, [30,20])
+        screen.blit(author, [40, 20+header.get_height()])
         [i.draw(screen) for i in self.buttons]
 
     

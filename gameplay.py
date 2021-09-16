@@ -1,6 +1,6 @@
 from glob import glob
 from os.path import basename, splitext
-import math, json
+import math, json, time
 import pygame
 import constants, ui
 
@@ -8,8 +8,8 @@ class GameManager: # standard gameplay
     
     def __init__(self, chart):
         path = "levels/" + chart + "/"
-        print("Loading song...")
-        with open(path + "/chart.json") as f:
+        pygame.mixer.music.load(path + "music.mp3")
+        with open(path + "chart.json") as f:
             self.song = json.loads(f.read())
             f.close()
 
@@ -23,7 +23,7 @@ class GameManager: # standard gameplay
         self.tl_beats_surf.fill(ui.alpha)
         self.tl_beats = []
 
-        self.praise = [0,-0.3]
+        self.praise = [0,-0.4]
 
         self.icons_pos = [0,0]
         self.icons_enabled = [False,False]
@@ -44,9 +44,31 @@ class GameManager: # standard gameplay
         self.last_beat = 0
         self.last_bar_change = 0
 
-    def update(self, t, events):
+        self.paused = False
+        self.pauseScreen = ui.PauseScreen()
+
+        pygame.mixer.music.play()
+
+    def update(self, events):
         self.events = events
-        self.pos = t / 1000 - self.song['offset']
+        for event in events:
+            if event.type == pygame.KEYDOWN and \
+            event.key == pygame.K_ESCAPE:
+                if not self.paused:
+                    self.paused = True
+                    self.pauseScreen.paused_at = time.time()
+                    pygame.mixer.stop()
+                    pygame.mixer.music.pause()
+                    constants.sfx_pause.play()
+                else:
+                    self.paused = False
+                    pygame.mixer.music.unpause()
+                    
+        if self.paused:
+            self.pauseScreen.update(events)
+            return
+        
+        self.pos = pygame.mixer.music.get_pos() / 1000 - self.song['offset']
         self.beat = self.pos / self.interval
         if self.beat - self.last_beat > 0.25: # prevent unpause jank
             return
@@ -100,6 +122,9 @@ class GameManager: # standard gameplay
                 screen.get_width()/2 - praise_surf.get_width()/2,
                 30 + ui.tl_size[1] - 10*(self.pos-self.praise[1])/0.3
                 ])
+
+        if self.paused:
+            self.pauseScreen.draw(screen)
 
     def handle_input(self, bar, player = 1, pre = False): # yes, this is awful. i'll try to iterate on it
         for event in self.events:
