@@ -17,35 +17,24 @@ clock = pygame.time.Clock()
 
 class StateManager:
     def __init__(self):
-        self.state = constants.CHART_SELECT
-        self.chartSelect = ui.ChartSelectScreen()
-        self.chartSelect.buttons[0].func_onclick = self.startGame
-        self.gameManager = None
-
+        self.manager = ui.ChartSelectScreen()
+        self.manager.buttons[0].func_onclick = self.startGame
+        
     def update(self, events):
-        if self.state == constants.CHART_SELECT:
-            self.chartSelect.buttons[0].args = [basename(self.chartSelect.songs[self.chartSelect.index]['path'])]
-            self.chartSelect.update(events)
-        if self.state == constants.GAMEPLAY:
-            self.gameManager.update(events)
+        self.manager.update(events)
             
     def draw(self, screen):
-        if self.state == constants.CHART_SELECT:
-            self.chartSelect.draw(screen)
-        if self.state == constants.GAMEPLAY:
-            self.gameManager.draw(screen)
+        self.manager.draw(screen)
 
     def startGame(self, chart):
         pygame.mixer.stop()
         pygame.mixer.music.stop()
-        self.gameManager = gameplay.GameManager(chart)
-        self.gameManager.pauseScreen.buttons[1].func_onclick = self.quitToSelection
-        self.state = constants.GAMEPLAY
-
+        self.manager = gameplay.GameManager(chart)
+        self.manager.pauseScreen.buttons[1].func_onclick = self.quitToSelection
+        
     def quitToSelection(self):
-        self.chartSelect = ui.ChartSelectScreen()
-        self.chartSelect.buttons[0].func_onclick = self.startGame
-        self.state = constants.CHART_SELECT
+        self.manager = ui.ChartSelectScreen()
+        self.manager.buttons[0].func_onclick = self.startGame
 
 stateManager = StateManager()
 
@@ -57,7 +46,7 @@ while 1:
     stateManager.update(events)
     stateManager.draw(screen)
     pygame.display.flip()
-    clock.tick()
+    clock.tick(120)
     pygame.display.set_caption(str(int(clock.get_fps())) + " FPS")
 
     

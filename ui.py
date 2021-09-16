@@ -160,7 +160,6 @@ class PauseScreen:
 
 class ChartSelectScreen:
     def __init__(self):
-        self.index = 0
         self.songs = []
         for i in glob('levels/*'):
             try:
@@ -172,6 +171,7 @@ class ChartSelectScreen:
             self.songs.append(
                 {
                     'path': i,
+                    #'preview': pygame.mixer.Sound(i+'/music.mp3'),
                     'name_text_header': font_pauseheader.render(
                         meta.get('name', 'Untitled Chart'), 0, [255,255,255]),
                     'name_text': font_caption.render(
@@ -190,29 +190,57 @@ class ChartSelectScreen:
                 ["???"]
             )
         ]
+        self.index = 0
+        self.last_scroll = 0
+        self.direction = 1
+        self.bg_image = pygame.transform.scale(pausebg, screensize)
+        #self.songs[self.index]['preview'].play(fade_ms=500)
 
     def update(self, events):
+        self.buttons[0].args = [self.songs[self.index]['path']]
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_DOWN:
+                    #self.songs[self.index]['preview'].fadeout(500)
+                    self.last_scroll = time.time() if self.index != len(self.songs)-1 else 0
                     self.index = (self.index + 1) % len(self.songs)
+                    #self.songs[self.index]['preview'].play(fade_ms=500)
+                    self.direction = 1
                 if event.key == pygame.K_UP:
+                    #self.songs[self.index]['preview'].fadeout(500)
+                    self.last_scroll = time.time() if self.index != 0 else 0
                     self.index = (self.index - 1) % len(self.songs)
+                    #self.songs[self.index]['preview'].play(fade_ms=500)
+                    self.direction = -1
             if event.type == pygame.MOUSEMOTION:
                 [i.on_mouse_move(event) for i in self.buttons]
             elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 [i.on_click() for i in self.buttons]
 
     def draw(self, screen):
+        interp = max(0,(0.15-(time.time()-self.last_scroll))/0.15)
         scroll = 0
         song = self.songs[self.index]
         header = song['name_text_header']
         author = song['chart_author_text']
-        screen.fill([70,70,70])
-        for i in range(self.index-2,self.index+3):
+        screen.blit(self.bg_image, [-(time.time()*50%screensize[0]),0])
+        screen.blit(self.bg_image, [-(time.time()*50%screensize[0])+screensize[0],0])
+        for i in range(self.index-3,self.index+4):
             if 0 <= i < len(self.songs):
                 song_temp = self.songs[i]
-                screen.blit(song_temp['name_text'], [50+20*(i==self.index), 200+scroll])
+                x = 50
+                if i == self.index:
+                    x = 50+20*(1-interp)
+                elif i == self.index - self.direction:
+                    x = 50+20*interp
+                textalpha = 122-(max(abs(i-self.index),1)-2)*122
+                if i-self.index <= -1:
+                    textalpha += 122*interp*self.direction
+                elif i-self.index >= 1:
+                    textalpha -= 122*interp*self.direction
+
+                song_temp['name_text'].set_alpha(textalpha)
+                screen.blit(song_temp['name_text'], [x, 170+scroll+30*interp*self.direction])                    
             scroll += 30
         screen.blit(header, [30,20])
         screen.blit(author, [40, 20+header.get_height()])

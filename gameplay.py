@@ -7,7 +7,7 @@ import constants, ui
 class GameManager: # standard gameplay
     
     def __init__(self, chart):
-        path = "levels/" + chart + "/"
+        path = chart + "/"
         pygame.mixer.music.load(path + "music.mp3")
         with open(path + "chart.json") as f:
             self.song = json.loads(f.read())
@@ -46,6 +46,7 @@ class GameManager: # standard gameplay
 
         self.paused = False
         self.pauseScreen = ui.PauseScreen()
+        self.pauseScreen.buttons[0].func_onclick = self.unpause
 
         pygame.mixer.music.play()
 
@@ -61,8 +62,7 @@ class GameManager: # standard gameplay
                     pygame.mixer.music.pause()
                     constants.sfx_pause.play()
                 else:
-                    self.paused = False
-                    pygame.mixer.music.unpause()
+                    self.unpause()
                     
         if self.paused:
             self.pauseScreen.update(events)
@@ -125,6 +125,10 @@ class GameManager: # standard gameplay
 
         if self.paused:
             self.pauseScreen.draw(screen)
+
+    def unpause(self):
+        pygame.mixer.music.unpause()
+        self.paused = False
 
     def handle_input(self, bar, player = 1, pre = False): # yes, this is awful. i'll try to iterate on it
         for event in self.events:

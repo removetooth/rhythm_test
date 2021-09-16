@@ -39,6 +39,3 @@ sfx_blip = pygame.mixer.Sound('sfx/blip.ogg')
 sfx_oops = pygame.mixer.Sound('sfx/oops.wav')
 sfx_good = pygame.mixer.Sound('sfx/good.ogg')
 sfx_pause = pygame.mixer.Sound('sfx/pause.ogg')
-
-GAMEPLAY = 0
-CHART_SELECT = 1
