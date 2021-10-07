@@ -170,7 +170,7 @@ class GameManager: # standard gameplay
                         self.praise[0] = 5
                     self.praise[1] = self.pos
                     self.tl_beats.append(ui.HUDBeat(
-                        ui.glyphs[button],
+                        button,
                         self.pos,
                         ui.get_pos_on_tl(self.tl_dots_surf, bar['length'], barpos, player)
                         ))
@@ -214,11 +214,11 @@ class GameManager: # standard gameplay
             target = bar['inputs'][self.next_input[0]]
             if self.bar_beat >= target['beat']:
                 self.sounds[target['sound']].play()
-                self.tl_beats.append(ui.HUDBeat(ui.glyphs[target['button']],
-                                         self.pos,
-                                         ui.get_pos_on_tl(self.tl_dots_surf,bar['length'],target['beat'],0)
-                                         )
-                                 )
+                self.tl_beats.append(ui.HUDBeat(
+                    target['button'],
+                    self.pos,
+                    ui.get_pos_on_tl(self.tl_dots_surf,bar['length'],target['beat'],0)
+                    ))
                 self.next_input[0] += 1
         pass
 
@@ -231,7 +231,7 @@ class GameManager: # standard gameplay
         #    target = bar['inputs'][self.next_ghost_input[0]]
         #    if prog >= target['beat']:
         #        self.tl_beats.append(ui.HUDBeat(
-        #            ui.glyphs[target['button']],
+        #            target['button'],
         #            self.pos,
         #            ui.get_pos_on_tl(self.tl_dots_surf,bar['length'],target['beat'],0),
         #            ghost = True
@@ -256,7 +256,7 @@ class GameManager: # standard gameplay
             target = bar['inputs'][self.next_ghost_input[1]]
             if prog >= target['beat']:
                 self.tl_beats.append(ui.HUDBeat(
-                    ui.glyphs[target['button']],
+                    target['button'],
                     self.pos,
                     ui.get_pos_on_tl(self.tl_dots_surf,bar['length'],target['beat'],1),
                     ghost = True

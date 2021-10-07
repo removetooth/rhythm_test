@@ -40,8 +40,8 @@ def draw_dots(surface, length):
         pygame.draw.circle(surface, [255,255,255], get_pos_on_tl(surface,length/4,i/4,1),radius)
     
 class HUDBeat:
-    def __init__(self, image, start_time, pos, ghost = False):
-        self.image = image
+    def __init__(self, button, start_time, pos, ghost = False):
+        self.image = glyphs[button]
         self.start_time = start_time
         self.pos = pos
         self.transparent = ghost
@@ -171,6 +171,8 @@ class ChartSelectScreen:
             self.songs.append(
                 {
                     'path': i,
+                    'name': meta.get('name', 'Untitled Chart'),
+                    'chart_author': meta.get('chart_author', 'Unknown Author'),
                     #'preview': pygame.mixer.Sound(i+'/music.mp3'),
                     'name_text_header': font_pauseheader.render(
                         meta.get('name', 'Untitled Chart'), 0, [255,255,255]),
@@ -240,7 +242,18 @@ class ChartSelectScreen:
                     textalpha -= 122*interp*self.direction
 
                 song_temp['name_text'].set_alpha(textalpha)
-                screen.blit(song_temp['name_text'], [x, 170+scroll+30*interp*self.direction])                    
+                screen.blit(
+                    song_temp['name_text'] if i != self.index \
+                    else font_caption.render(
+                        song_temp['name'], 0,
+                        [
+                            122+int(122*math.sin(time.time())),
+                            122+int(122*math.cos(time.time())),
+                            122-int(122*math.sin(time.time()))
+                        ]
+                    ),
+                    [x, 170+scroll+30*interp*self.direction]
+                )                    
             scroll += 30
         screen.blit(header, [30,20])
         screen.blit(author, [40, 20+header.get_height()])
