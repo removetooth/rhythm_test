@@ -2,6 +2,8 @@ from glob import glob
 from os.path import basename, splitext
 import math, json, time
 import pygame
+from OpenGL.GL import *
+from OpenGL.GLU import *
 import constants, ui
 
 class GameManager: # standard gameplay
@@ -16,9 +18,8 @@ class GameManager: # standard gameplay
         self.sounds = {splitext(basename(i))[0]: pygame.mixer.Sound(i) for i in glob(path + "sfx/*")}
         self.captions = [ui.font_caption.render(i['text'],0,[255,255,255]) for i in self.song['bars']]
         
-        self.tl_dots_surf = pygame.Surface(ui.tl_size)
-        self.tl_dots_surf.set_colorkey(ui.colorkey)
-        self.tl_dots_surf.fill(ui.colorkey)
+        self.tl_dots_surf = pygame.Surface(ui.tl_size, pygame.SRCALPHA)
+        self.tl_dots_surf.fill(ui.alpha)
         self.tl_beats_surf = pygame.Surface(ui.tl_size, pygame.SRCALPHA)
         self.tl_beats_surf.fill(ui.alpha)
         self.tl_beats = []
@@ -70,7 +71,7 @@ class GameManager: # standard gameplay
         
         self.pos = pygame.mixer.music.get_pos() / 1000 - self.song['offset']
         self.beat = self.pos / self.interval
-        if self.beat - self.last_beat > 0.25: # prevent unpause jank
+        if self.beat - self.last_beat > 0.5: # prevent unpause jank
             return
         self.last_beat = self.beat
         self.bar_beat = self.beat - self.last_bar_change
@@ -93,7 +94,7 @@ class GameManager: # standard gameplay
         pass
 
     def draw(self, screen): # this is giving me a massive headache. i am so, so sorry
-        screen.fill([100,100,100])
+        screen.fill(ui.alpha)#[100,100,100,0])
         self.tl_beats_surf.fill(ui.alpha)
         pygame.draw.circle(screen,(255,255,255), [
             int(screen.get_width()*.25) + (self.pos/4%self.interval) * int(screen.get_width()*.50)/self.interval,
@@ -125,6 +126,25 @@ class GameManager: # standard gameplay
 
         if self.paused:
             self.pauseScreen.draw(screen)
+
+    def drawGL(self):
+        glEnable(GL_DEPTH_TEST)
+        glDisable(GL_TEXTURE_2D)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        gluPerspective(45, (ui.screensize[0]/ui.screensize[1]), 0.1, 50.0)
+        glTranslatef(0.0,0.0, -5)
+        glMatrixMode(GL_MODELVIEW)
+        glRotatef(80*self.last_beat*self.interval,3,1,1)
+        glColor3f(1,1,1)
+        glBegin(GL_LINES)
+        for edge in edges:
+            for vertex in edge:
+                glVertex3fv(vertices[vertex])
+        glEnd()
+
+    def drawOverGL(self):
+        pass
 
     def unpause(self):
         pygame.mixer.music.unpause()
@@ -198,7 +218,7 @@ class GameManager: # standard gameplay
             self.next_ghost_input[1] = 0
 
         if next_bar['type'] == 'break':
-            self.tl_dots_surf.fill(ui.colorkey)
+            self.tl_dots_surf.fill(ui.alpha)
         else:
             ui.draw_dots(self.tl_dots_surf, next_bar['length'])
 
@@ -292,3 +312,29 @@ bar_prep_handlers = {
 def score():
     # scoring system, i'll work on it in a bit
     return 0
+
+vertices = (
+    (1, -1, -1),
+    (1, 1, -1),
+    (-1, 1, -1),
+    (-1, -1, -1),
+    (1, -1, 1),
+    (1, 1, 1),
+    (-1, -1, 1),
+    (-1, 1, 1)
+    )
+
+edges = (
+    (0,1),
+    (0,3),
+    (0,4),
+    (2,1),
+    (2,3),
+    (2,7),
+    (6,3),
+    (6,4),
+    (6,7),
+    (5,1),
+    (5,4),
+    (5,7)
+    )

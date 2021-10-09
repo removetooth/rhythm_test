@@ -1,4 +1,5 @@
 import pygame, math, time, sys, json
+from OpenGL.GL import *
 from glob import glob
 import constants
 
@@ -31,14 +32,26 @@ def get_pos_on_tl(surface, length, beat, player):
 def draw_dots(surface, length):
     # used for the timeline at the top
     length = int(length * 4)
-    surface.fill(constants.ui_colorkey)
+    surface.fill(alpha)
     for i in range(length):
         radius = 4
         if i % 4 == 0:
             radius = 7
         pygame.draw.circle(surface, [255,255,255], get_pos_on_tl(surface,length/4,i/4,0),radius)
         pygame.draw.circle(surface, [255,255,255], get_pos_on_tl(surface,length/4,i/4,1),radius)
-    
+
+def surfaceToTexture( pygame_surface, texture ):
+    rgb_surface = pygame.image.tostring( pygame_surface, 'RGBA')
+    glBindTexture(GL_TEXTURE_2D, texture)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+    surface_rect = pygame_surface.get_rect()
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface_rect.width, surface_rect.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgb_surface)
+    glGenerateMipmap(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, 0)
+  
 class HUDBeat:
     def __init__(self, button, start_time, pos, ghost = False):
         self.image = glyphs[button]
@@ -83,7 +96,7 @@ class UIButton:
         self.args = args
         self.last_interaction = 0
         self.moused = False
-        self.surface = pygame.Surface(size, pygame.SRCALPHA)
+        self.surface = pygame.Surface(size).convert_alpha(constants.surface)
 
     def on_click(self):
         if self.moused:
@@ -125,13 +138,10 @@ class PauseScreen:
             UIButton("resume", [screensize[0]/2, screensize[1]/2-30], [100,30], pygame.mixer.music.unpause),
             UIButton("quit", [screensize[0]/2, screensize[1]/2+30], [100,30], sys.exit),
             ]
-        self.gray = pygame.Surface(screensize)
-        self.gray.fill([0,0,0])
-        self.gray.set_alpha(100)
-        self.bg = pygame.Surface(screensize)
+        self.bg = pygame.Surface(screensize).convert_alpha(constants.surface)
         self.bg.set_colorkey(colorkey)
         self.bg.fill([0,0,0])
-        self.bg_image = pygame.transform.scale(pausebg, screensize)
+        self.bg_image = pygame.transform.scale(pausebg, screensize).convert_alpha(constants.surface)
         self.paused_at = 0
         self.header = font_pauseheader.render("Paused", 0, [255,255,255])
 
@@ -146,13 +156,12 @@ class PauseScreen:
         interp = 1-min(1, (time.time()-self.paused_at)/0.15)
         self.bg.blit(self.bg_image, [-(time.time()*50%screensize[0]),0])
         self.bg.blit(self.bg_image, [-(time.time()*50%screensize[0])+screensize[0],0])
-        pygame.draw.polygon(self.bg, colorkey, [
+        pygame.draw.polygon(self.bg, [0,0,0,100], [
             [0,screensize[1]+(screensize[1]/4)*interp],
             [0,screensize[1]/4-(screensize[1]/4)*interp],
             [screensize[0],0-(screensize[1]/4)*interp],
             [screensize[0],3*screensize[1]/4+(screensize[1]/4)*interp]
             ])
-        screen.blit(self.gray, [0,0])
         screen.blit(self.bg, [0,0])
         screen.blit(self.header, [30-(screensize[0]/4)*interp,20])
         [i.draw(screen) for i in self.buttons]
@@ -258,5 +267,11 @@ class ChartSelectScreen:
         screen.blit(header, [30,20])
         screen.blit(author, [40, 20+header.get_height()])
         [i.draw(screen) for i in self.buttons]
+
+    def drawGL(self):
+        pass
+
+    def drawOverGL(self):
+        pass
 
     

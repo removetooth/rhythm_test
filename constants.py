@@ -6,7 +6,7 @@ buttons = {pygame.K_z:'a',pygame.K_x:'b',pygame.K_c:'x',pygame.K_v:'y',
            pygame.K_UP:'up',pygame.K_DOWN:'down',pygame.K_LEFT:'left',pygame.K_RIGHT:'right',
            pygame.K_w:'up',pygame.K_s:'down',pygame.K_a:'left',pygame.K_d:'right'}
 
-ui_screensize = [640,480]
+ui_screensize = [640,480]#[1280,720]
 ui_colorkey = [255,0,255]
 ui_font_caption = pygame.font.Font("ode_to_idle_gaming.otf", 15)
 ui_font_praise = pygame.font.Font("ode_to_idle_gaming.otf", 15)
@@ -34,6 +34,8 @@ ui_praise = [
     ui_font_praise.render('oops!', 0, [200,0,0]),
     ui_font_praise.render('wrong button', 0, [200,100,0])
     ]
+
+surface = pygame.Surface(ui_screensize, pygame.SRCALPHA)
 
 sfx_blip = pygame.mixer.Sound('sfx/blip.ogg')
 sfx_oops = pygame.mixer.Sound('sfx/oops.wav')

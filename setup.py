@@ -1,4 +1,4 @@
-import cx_Freeze, sys
+import cx_Freeze, sys, os
 
 base = None
 if (sys.platform == "win32"):
@@ -15,8 +15,16 @@ executables = [
 cx_Freeze.setup(
     name="rhythm_test",
     options={"build_exe": {
-        "packages":["pygame"],
-        "optimize": 2,
+        "packages":[
+            "pygame",
+            "OpenGL",
+            "OpenGL.platform.win32",
+            "OpenGL.arrays.numpymodule",
+            "OpenGL.arrays.strings",
+            "OpenGL.GLU",
+            "OpenGL.GLU.glustruct"
+            ],
+        "optimize": 1,
         "include_files":[
            "ode_to_idle_gaming.otf",
             "img",
@@ -32,7 +40,7 @@ cx_Freeze.setup(
            "html",
            "http",
            "lib2to3",
-           "logging",
+           #"logging",
            "msizxcclib",
            "multiprocessing",
            "pkg_resources",
@@ -41,11 +49,11 @@ cx_Freeze.setup(
            "test",
            "tkinter",
            "unittest",
-           "urllib",
+           #"urllib",
            "xml",
            "xmlrpc",
-           "numpy",
-           "ctypes",
+           #"numpy",
+           #"ctypes",
            "socket",
            "pygame.examples",
            "pygame.tests"
