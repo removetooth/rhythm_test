@@ -4,7 +4,8 @@ import math, json, time
 import pygame
 from OpenGL.GL import *
 from OpenGL.GLU import *
-import constants, ui
+import misc, ui
+from constants import *
 
 class GameManager: # standard gameplay
     
@@ -24,7 +25,7 @@ class GameManager: # standard gameplay
         self.tl_beats_surf.fill(ui.alpha)
         self.tl_beats = []
 
-        self.praise = [0,-0.4]
+        self.praise = [PRAISE_PERFECT,-0.4]
 
         self.icons_pos = [0,0]
         self.icons_enabled = [False,False]
@@ -61,7 +62,7 @@ class GameManager: # standard gameplay
                     self.pauseScreen.paused_at = time.time()
                     pygame.mixer.stop()
                     pygame.mixer.music.pause()
-                    constants.sfx_pause.play()
+                    misc.sfx_pause.play()
                 else:
                     self.unpause()
                     
@@ -78,13 +79,13 @@ class GameManager: # standard gameplay
         [i.update(self.pos) for i in self.tl_beats]
 
         bar_handlers.get(self.bar['type'], GameManager.bar_break)(self, self.bar, self.bar_beat)
-        if self.bar_no + 1 < len(self.song['bars']) and self.bar_beat >= self.bar['length'] - constants.prep_time:
+        if self.bar_no + 1 < len(self.song['bars']) and self.bar_beat >= self.bar['length'] - GAME_PREP_TIME:
             next_bar = self.song['bars'][self.bar_no+1]
             bar_prep_handlers.get(next_bar['type'], GameManager.bar_break_prep)(self, next_bar, self.bar_beat - self.bar['length'])
 
         if self.pos % self.interval < self.interval / 4 and not self.pulsed: # at beginning of beat
             self.pulsed = 1
-            #constants.sfx_blip.play()
+            #misc.sfx_blip.play()
             if int(self.beat) - self.last_bar_change + 1 > self.bar['length']:
                 GameManager.start_new_bar(self)
         elif self.pos % self.interval > self.interval - self.interval / 2 and \
@@ -152,48 +153,41 @@ class GameManager: # standard gameplay
 
     def handle_input(self, bar, player = 1, pre = False): # yes, this is awful. i'll try to iterate on it
         for event in self.events:
-            if event.type == pygame.KEYDOWN:
-                if event.key in constants.buttons:
-                    barpos = self.bar_beat - bar['length']*pre
-                    button = constants.buttons[event.key]
-                    if button in bar['sfx']:
-                        if self.no_presses[0] == button:
-                            self.no_presses[1] = (self.no_presses[1] + 1) % len(bar['sfx'][button])
-                        else:
-                            self.no_presses = [button, 0]
-                        self.sounds[bar['sfx'][constants.buttons[event.key]][self.no_presses[1]]].play()
-                        highest_praise = 0
-                        target_input = None
-                        for i in bar['inputs']: # iterate on / figure out a better, cleaner implementation for this
-                            if abs(barpos - i['beat']) < 1/32 and highest_praise < 4:
-                                self.praise[0] = 0
-                                highest_praise = 4
-                                target_input = i['button']
-                            elif abs(barpos - i['beat']) < 1/16 and highest_praise < 3:
-                                self.praise[0] = 1
-                                highest_praise = 3
-                                target_input = i['button']
-                            elif abs(barpos - i['beat']) < 1/8 and highest_praise < 2:
-                                self.praise[0] = 2
-                                highest_praise = 2
-                                target_input = i['button']
-                            elif abs(barpos - i['beat']) < 1/4 and highest_praise < 1:
-                                self.praise[0] = 3
-                                highest_praise = 1
-                                target_input = i['button']
-                        if button != target_input:
-                            self.praise[0] = 6
-                        if highest_praise == 0:
-                            self.praise[0] = 4
+            if event.type == pygame.KEYDOWN and event.key in misc.buttons:
+                barpos = self.bar_beat - bar['length']*pre
+                button = misc.buttons[event.key]
+                if button in bar['sfx']:
+                    if self.no_presses[0] == button:
+                        self.no_presses[1] = (self.no_presses[1] + 1) % len(bar['sfx'][button])
                     else:
-                        constants.sfx_oops.play()
-                        self.praise[0] = 5
-                    self.praise[1] = self.pos
-                    self.tl_beats.append(ui.HUDBeat(
-                        button,
-                        self.pos,
-                        ui.get_pos_on_tl(self.tl_dots_surf, bar['length'], barpos, player)
-                        ))
+                        self.no_presses = [button, 0]
+                    self.sounds[bar['sfx'][misc.buttons[event.key]][self.no_presses[1]]].play()
+                    self.praise[0] = PRAISE_MISS
+                    target_input = None
+                    for i in bar['inputs']: # iterate on / figure out a better, cleaner implementation for this
+                        if abs(barpos - i['beat']) < 1/32 and self.praise[0] < PRAISE_PERFECT:
+                            self.praise[0] = PRAISE_PERFECT
+                            target_input = i['button']
+                        elif abs(barpos - i['beat']) < 1/16 and self.praise[0] < PRAISE_GREAT:
+                            self.praise[0] = PRAISE_GREAT
+                            target_input = i['button']
+                        elif abs(barpos - i['beat']) < 1/8 and self.praise[0] < PRAISE_GOOD:
+                            self.praise[0] = PRAISE_GOOD
+                            target_input = i['button']
+                        elif abs(barpos - i['beat']) < 1/4 and self.praise[0] < PRAISE_OK:
+                            self.praise[0] = PRAISE_OK
+                            target_input = i['button']
+                    if button != target_input and self.praise[0] != PRAISE_MISS:
+                        self.praise[0] = PRAISE_MISINPUT
+                else:
+                    misc.sfx_oops.play()
+                    self.praise[0] = PRAISE_OOPS
+                self.praise[1] = self.pos
+                self.tl_beats.append(ui.HUDBeat(
+                    button,
+                    self.pos,
+                    ui.get_pos_on_tl(self.tl_dots_surf, bar['length'], barpos, player)
+                    ))
                         
 
     # ==== bar handling ====
@@ -207,7 +201,7 @@ class GameManager: # standard gameplay
             self.next_input[0] = 0
             self.icons_enabled[0] = False
         elif self.bar['type'] == 'response':
-            constants.sfx_good.play()
+            misc.sfx_good.play()
             self.tl_beats = []
             self.next_input[1] = 0
             self.icons_enabled[1] = False
@@ -246,7 +240,7 @@ class GameManager: # standard gameplay
         self.icons_enabled[0] = True
         self.icons_length[0] = bar['length']
         self.icons_pos[0] = beat
-        prog = bar['length'] * (constants.prep_time - beat) / constants.prep_time
+        prog = bar['length'] * (GAME_PREP_TIME - beat) / GAME_PREP_TIME
         #if self.next_ghost_input[0] < len(bar['inputs']):
         #    target = bar['inputs'][self.next_ghost_input[0]]
         #    if prog >= target['beat']:
@@ -271,7 +265,7 @@ class GameManager: # standard gameplay
         self.icons_length[1] = bar['length']
         self.icons_pos[1] = beat
         GameManager.handle_input(self, bar, pre=1)
-        prog = bar['length'] * (constants.prep_time + beat) / constants.prep_time
+        prog = bar['length'] * (GAME_PREP_TIME + beat) / GAME_PREP_TIME
         if self.next_ghost_input[1] < len(bar['inputs']):
             target = bar['inputs'][self.next_ghost_input[1]]
             if prog >= target['beat']:

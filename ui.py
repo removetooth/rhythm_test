@@ -1,19 +1,40 @@
 import pygame, math, time, sys, json
 from OpenGL.GL import *
 from glob import glob
-import constants
+import misc
+from constants import *
 
-screensize = constants.ui_screensize
-colorkey = constants.ui_colorkey
-font_caption = constants.ui_font_caption
-font_praise = constants.ui_font_praise
-font_button = constants.ui_font_button
-font_pauseheader = constants.ui_font_pauseheader
-tl_size = constants.ui_tl_size
-alpha = constants.ui_alpha
-pausebg = constants.ui_pausebg
-glyphs = constants.ui_glyphs
-praise = constants.ui_praise
+screensize = [640,480]#[1280,720]
+font_caption = pygame.font.Font("ode_to_idle_gaming.otf", 15)
+font_praise = pygame.font.Font("ode_to_idle_gaming.otf", 15)
+font_button = pygame.font.Font("ode_to_idle_gaming.otf", 14)
+font_pauseheader = pygame.font.Font("ode_to_idle_gaming.otf", 35)
+tl_size = [500, 150]
+alpha = [0,0,0,0]
+pausebg = pygame.image.load('img/ui/pause_bg.png')
+glyphs = {
+    'a':pygame.image.load('img/button/x.png'),
+    'b':pygame.image.load('img/button/c.png'),
+    'x':pygame.image.load('img/button/z.png'),
+    'y':pygame.image.load('img/button/s.png'),
+    'l':pygame.image.load('img/button/a.png'),
+    'r':pygame.image.load('img/button/d.png'),
+    'up':pygame.image.load('img/button/kb_up.png'),
+    'down':pygame.image.load('img/button/kb_down.png'),
+    'left':pygame.image.load('img/button/kb_left.png'),
+    'right':pygame.image.load('img/button/kb_right.png'),
+    }
+praise = {
+    PRAISE_PERFECT:font_praise.render('perfect!', 0, [200,200,0]),
+    PRAISE_GREAT:font_praise.render('great!', 0, [0,255,0]),
+    PRAISE_GOOD:font_praise.render('good', 0, [200,200,255]),
+    PRAISE_OK:font_praise.render('eh...', 0, [0,0,200]),
+    PRAISE_MISS:font_praise.render('miss', 0, [200,0,0]),
+    PRAISE_OOPS:font_praise.render('oops!', 0, [200,0,0]),
+    PRAISE_MISINPUT:font_praise.render('wrong button', 0, [200,100,0])
+    }
+
+surface = pygame.Surface(screensize, pygame.SRCALPHA)
 
 def get_pos_on_tl(surface, length, beat, player):
     # used to find the graphical position on the timeline,
@@ -58,10 +79,9 @@ class HUDBeat:
         self.start_time = start_time
         self.pos = pos
         self.transparent = ghost
-        self.surface = pygame.Surface([[50,50], [40,40]][ghost])
-        self.surface.set_colorkey(constants.ui_colorkey)
+        self.surface = pygame.Surface([[50,50], [40,40]][ghost]).convert_alpha(surface)
         self.surface.set_alpha([255, 0][ghost])
-        self.surface.fill(constants.ui_colorkey)
+        self.surface.fill(alpha)
 
     def update(self, pos):
         t = pos - self.start_time
@@ -74,7 +94,7 @@ class HUDBeat:
             temp = pygame.transform.scale(self.image,
                                           [int(abs(math.cos(t*9*(1-self.transparent))*self.surface.get_width()/2))+extra,
                                            int(self.surface.get_height()/2)+extra])
-            self.surface.fill(constants.ui_colorkey)
+            self.surface.fill(alpha)
             self.surface.blit(temp, [self.surface.get_width()/2 - temp.get_width()/2,
                                      self.surface.get_height()/2 - temp.get_height()/2])
         
@@ -96,7 +116,7 @@ class UIButton:
         self.args = args
         self.last_interaction = 0
         self.moused = False
-        self.surface = pygame.Surface(size).convert_alpha(constants.surface)
+        self.surface = pygame.Surface(size).convert_alpha(surface)
 
     def on_click(self):
         if self.moused:
@@ -106,13 +126,11 @@ class UIButton:
         if event.pos[0] in range(self.corner[0], self.corner[0]+self.size[0]+1) and \
            event.pos[1] in range(self.corner[1], self.corner[1]+self.size[1]+1) and \
            not self.moused:
-            self.moused = True
-            self.last_interaction = time.time()
+            self.set_hl(1)
         elif (not event.pos[0] in range(self.corner[0], self.corner[0]+self.size[0]+1) or \
              not event.pos[1] in range(self.corner[1], self.corner[1]+self.size[1]+1)) and \
              self.moused:
-            self.moused = False
-            self.last_interaction = time.time()
+            self.set_hl(0)
 
     def draw(self, screen):
         self.surface.fill(alpha)
@@ -131,6 +149,10 @@ class UIButton:
             ])
         screen.blit(self.surface, self.corner)
 
+    def set_hl(self, hl): # set highlight func for keyboard navigation
+        self.moused = hl
+        self.last_interaction = time.time()
+
 
 class PauseScreen:
     def __init__(self):
@@ -138,10 +160,9 @@ class PauseScreen:
             UIButton("resume", [screensize[0]/2, screensize[1]/2-30], [100,30], pygame.mixer.music.unpause),
             UIButton("quit", [screensize[0]/2, screensize[1]/2+30], [100,30], sys.exit),
             ]
-        self.bg = pygame.Surface(screensize).convert_alpha(constants.surface)
-        self.bg.set_colorkey(colorkey)
+        self.bg = pygame.Surface(screensize).convert_alpha(surface)
         self.bg.fill([0,0,0])
-        self.bg_image = pygame.transform.scale(pausebg, screensize).convert_alpha(constants.surface)
+        self.bg_image = pygame.transform.scale(pausebg, screensize).convert_alpha(surface)
         self.paused_at = 0
         self.header = font_pauseheader.render("Paused", 0, [255,255,255])
 
@@ -211,18 +232,20 @@ class ChartSelectScreen:
         self.buttons[0].args = [self.songs[self.index]['path']]
         for event in events:
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_DOWN:
+                if misc.buttons.get(event.key, None) == "down":
                     #self.songs[self.index]['preview'].fadeout(500)
                     self.last_scroll = time.time() if self.index != len(self.songs)-1 else 0
                     self.index = (self.index + 1) % len(self.songs)
                     #self.songs[self.index]['preview'].play(fade_ms=500)
                     self.direction = 1
-                if event.key == pygame.K_UP:
+                if misc.buttons.get(event.key, None) == "up":
                     #self.songs[self.index]['preview'].fadeout(500)
                     self.last_scroll = time.time() if self.index != 0 else 0
                     self.index = (self.index - 1) % len(self.songs)
                     #self.songs[self.index]['preview'].play(fade_ms=500)
                     self.direction = -1
+                if misc.buttons.get(event.key, None) == "a":
+                    self.buttons[0].func_onclick(*self.buttons[0].args)
             if event.type == pygame.MOUSEMOTION:
                 [i.on_mouse_move(event) for i in self.buttons]
             elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:

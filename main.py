@@ -11,7 +11,8 @@ from OpenGL.GLU import *
 import pygame
 pygame.init()
 
-import constants, ui, gameplay
+import misc, ui, gameplay
+from constants import *
 
 pygame.mixer.init()
 screen = pygame.display.set_mode(ui.screensize, pygame.OPENGL | pygame.DOUBLEBUF)
@@ -32,6 +33,7 @@ class StateManager:
         glPushMatrix()
         self.manager.drawGL()
         glPopMatrix()
+        glEnable(GL_BLEND)
         
         self.manager.draw(surface)
 
@@ -47,7 +49,7 @@ class StateManager:
         glClearColor(0, 0, 0, 1.0)
 
         # draw texture openGL Texture
-        ui.surfaceToTexture( constants.surface, screentexture )
+        ui.surfaceToTexture( surface, screentexture )
         glBindTexture(GL_TEXTURE_2D, screentexture)
         glBegin(GL_QUADS)
         glTexCoord2f(0, 0); glVertex2f(-1, 1)
@@ -71,7 +73,6 @@ class StateManager:
         self.manager.buttons[0].func_onclick = self.startGame
 
 screentexture = glGenTextures(1)
-glEnable(GL_BLEND);
 
 stateManager = StateManager()
 
@@ -83,7 +84,7 @@ while 1:
             pygame.quit()
             sys.exit()
     stateManager.update(events)
-    stateManager.draw(constants.surface)
+    stateManager.draw(ui.surface)
     
     pygame.display.flip()
     pygame.display.set_caption(str(int(clock.get_fps())) + " FPS")
