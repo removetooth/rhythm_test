@@ -117,9 +117,11 @@ class UIButton:
         self.last_interaction = 0
         self.moused = False
         self.surface = pygame.Surface(size).convert_alpha(surface)
+        self.kbnav = [None,None,None,None]
+        self.inhibit_next_kb_event = False
 
-    def on_click(self):
-        if self.moused:
+    def on_click(self, event):
+        if self.moused and event.button == 1:
             self.func_onclick(*self.args)
 
     def on_mouse_move(self, event):
@@ -132,7 +134,19 @@ class UIButton:
              self.moused:
             self.set_hl(0)
 
+    def on_key_press(self, event):
+        key = misc.buttons.get(event.key, None)
+        if self.moused and not self.inhibit_next_kb_event:
+            if key in ['up', 'down', 'left', 'right']:
+                d = {'up':0, 'down':1, 'left':2, 'right':3}[misc.buttons[event.key]]
+                if self.kbnav[d] != None:
+                    self.set_hl(0)
+                    self.kbnav[d].set_hl(1)
+            elif key == 'a':
+                self.func_onclick(*self.args)
+
     def draw(self, screen):
+        self.inhibit_next_kb_event = False
         self.surface.fill(alpha)
         if self.moused:
             interp = min(1,(time.time()-self.last_interaction)/0.1)
@@ -143,7 +157,12 @@ class UIButton:
                           self.size[0]-self.size[0]/10*(1-interp),
                           self.size[1]]
                          )
-        self.surface.blit(self.text_surf, [
+        ts = self.text_surf if not self.moused \
+             else font_button.render(self.text, 0,
+                  [122+int(122*math.sin(time.time())),
+                   122+int(122*math.cos(time.time())),
+                   122-int(122*math.sin(time.time()))])
+        self.surface.blit(ts, [
             self.size[0]/2 - self.text_surf.get_width() / 2,
             self.size[1]/2 - self.text_surf.get_height() / 2
             ])
@@ -152,7 +171,18 @@ class UIButton:
     def set_hl(self, hl): # set highlight func for keyboard navigation
         self.moused = hl
         self.last_interaction = time.time()
+        self.inhibit_next_kb_event = True
 
+    def set_kbnav(self, direction, button):
+        """
+        void set_kbnav (direction, button)
+        Sets the button to highlight when a direction key is pressed.
+        0 - up, 1 - down, 2 - left, 3 - right
+        """
+        if type(button) in [UIButton, type(None)]:
+            self.kbnav[direction] = button
+        else:
+            print("set_kbnav: button must be type UIButton or NoneType")
 
 class PauseScreen:
     def __init__(self):
@@ -160,6 +190,10 @@ class PauseScreen:
             UIButton("resume", [screensize[0]/2, screensize[1]/2-30], [100,30], pygame.mixer.music.unpause),
             UIButton("quit", [screensize[0]/2, screensize[1]/2+30], [100,30], sys.exit),
             ]
+        self.buttons[0].set_kbnav(1, self.buttons[1])
+        self.buttons[1].set_kbnav(0, self.buttons[0])
+        self.buttons[0].set_kbnav(0, self.buttons[1])
+        self.buttons[1].set_kbnav(1, self.buttons[0])
         self.bg = pygame.Surface(screensize).convert_alpha(surface)
         self.bg.fill([0,0,0])
         self.bg_image = pygame.transform.scale(pausebg, screensize).convert_alpha(surface)
@@ -170,8 +204,12 @@ class PauseScreen:
         for event in events:
             if event.type == pygame.MOUSEMOTION:
                 [i.on_mouse_move(event) for i in self.buttons]
-            elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                [i.on_click() for i in self.buttons]
+            elif event.type == pygame.MOUSEBUTTONUP:
+                [i.on_click(event) for i in self.buttons]
+            elif event.type == pygame.KEYDOWN:
+                [i.on_key_press(event) for i in self.buttons]
+                if len([i for i in self.buttons if i.moused]) == 0:
+                    self.buttons[0].set_hl(1)
 
     def draw(self, screen):
         interp = 1-min(1, (time.time()-self.paused_at)/0.15)
@@ -222,6 +260,7 @@ class ChartSelectScreen:
                 ["???"]
             )
         ]
+        self.buttons[0].set_hl(1)
         self.index = 0
         self.last_scroll = 0
         self.direction = 1
@@ -232,24 +271,27 @@ class ChartSelectScreen:
         self.buttons[0].args = [self.songs[self.index]['path']]
         for event in events:
             if event.type == pygame.KEYDOWN:
-                if misc.buttons.get(event.key, None) == "down":
+                key = misc.buttons.get(event.key, None)
+                [i.on_key_press(event) for i in self.buttons]
+                if len([i for i in self.buttons if i.moused]) == 0 and \
+                   key in ['left', 'right']:
+                    self.buttons[0].set_hl(1)
+                if key == "down":
                     #self.songs[self.index]['preview'].fadeout(500)
                     self.last_scroll = time.time() if self.index != len(self.songs)-1 else 0
                     self.index = (self.index + 1) % len(self.songs)
                     #self.songs[self.index]['preview'].play(fade_ms=500)
                     self.direction = 1
-                if misc.buttons.get(event.key, None) == "up":
+                if key == "up":
                     #self.songs[self.index]['preview'].fadeout(500)
                     self.last_scroll = time.time() if self.index != 0 else 0
                     self.index = (self.index - 1) % len(self.songs)
                     #self.songs[self.index]['preview'].play(fade_ms=500)
                     self.direction = -1
-                if misc.buttons.get(event.key, None) == "a":
-                    self.buttons[0].func_onclick(*self.buttons[0].args)
             if event.type == pygame.MOUSEMOTION:
                 [i.on_mouse_move(event) for i in self.buttons]
-            elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                [i.on_click() for i in self.buttons]
+            elif event.type == pygame.MOUSEBUTTONUP:
+                [i.on_click(event) for i in self.buttons]
 
     def draw(self, screen):
         interp = max(0,(0.15-(time.time()-self.last_scroll))/0.15)
