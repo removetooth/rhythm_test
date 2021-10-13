@@ -23,13 +23,16 @@ start_time = time.time()
 class StateManager:
     def __init__(self):
         self.manager = ui.ChartSelectScreen()
-        self.manager.buttons[0].func_onclick = self.startGame
+        self.manager.buttonMenu.setButtonFunc('start', self.startGame)
         
     def update(self, events):
         self.manager.update(events)
             
     def draw(self, surface):
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+        glEnable(GL_DEPTH_TEST)
+        glDisable(GL_TEXTURE_2D)
+        glEnable(GL_LIGHTING)
         glPushMatrix()
         self.manager.drawGL()
         glPopMatrix()
@@ -57,7 +60,10 @@ class StateManager:
         glTexCoord2f(1, 1); glVertex2f(1, -1)
         glTexCoord2f(1, 0); glVertex2f(1, 1)
         glEnd()
-        
+
+        glEnable(GL_DEPTH_TEST)
+        glDisable(GL_TEXTURE_2D)
+        glEnable(GL_LIGHTING)
         glPushMatrix()
         self.manager.drawOverGL()
         glPopMatrix()
@@ -66,11 +72,11 @@ class StateManager:
         pygame.mixer.stop()
         pygame.mixer.music.stop()
         self.manager = gameplay.GameManager(chart)
-        self.manager.pauseScreen.buttons[1].func_onclick = self.quitToSelection
+        self.manager.pauseScreen.buttonMenu.setButtonFunc('quit', self.quitToSelection)
         
     def quitToSelection(self):
         self.manager = ui.ChartSelectScreen()
-        self.manager.buttons[0].func_onclick = self.startGame
+        self.manager.buttonMenu.setButtonFunc('start', self.startGame)
 
 screentexture = glGenTextures(1)
 

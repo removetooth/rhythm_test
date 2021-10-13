@@ -76,6 +76,7 @@ def surfaceToTexture( pygame_surface, texture ):
     glGenerateMipmap(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, 0)
   
+
 class HUDBeat:
     def __init__(self, button, start_time, pos, ghost = False):
         self.image = glyphs[button]
@@ -104,6 +105,7 @@ class HUDBeat:
     def draw(self, surface):
         surface.blit(self.surface, [self.pos[0] - self.surface.get_width()/2,
                                     self.pos[1] - self.surface.get_height()/2])
+
 
 class UIButton:
     def __init__(self, text, pos, size, func_onclick = print, args = []):
@@ -142,7 +144,7 @@ class UIButton:
         if self.moused and not self.inhibit_next_kb_event:
             if key in ['up', 'down', 'left', 'right']:
                 d = {'up':0, 'down':1, 'left':2, 'right':3}[misc.buttons[event.key]]
-                if self.kbnav[d] != None:
+                if self.kbnav[d]:
                     self.set_hl(0)
                     self.kbnav[d].set_hl(1)
             elif key == 'a':
@@ -178,7 +180,7 @@ class UIButton:
 
     def set_kbnav(self, direction, button):
         """
-        void set_kbnav (direction, button)
+        set_kbnav(self, direction, button)
         Sets the button to highlight when a direction key is pressed.
         0 - up, 1 - down, 2 - left, 3 - right
         """
@@ -187,32 +189,92 @@ class UIButton:
         else:
             print("set_kbnav: button must be type UIButton or NoneType")
 
+
+class ButtonMenu:
+    def __init__(self):
+        self.buttons = {}
+        self.default_navpoint = None
+        self.default_dirs = 0b1111
+
+    def handleEvent(self, event):
+        """
+        handleEvent(self, event)
+        Handle events for all buttons. Called within event loop.
+        """
+        if event.type == pygame.MOUSEMOTION:
+            [self.buttons[i].on_mouse_move(event) for i in self.buttons]
+            
+        elif event.type == pygame.MOUSEBUTTONUP:
+            [self.buttons[i].on_click(event) for i in self.buttons]
+            
+        elif event.type == pygame.KEYDOWN:
+            [self.buttons[i].on_key_press(event) for i in self.buttons]
+            key = misc.buttons.get(event.key, None)
+            d = {'up':0b1000, 'down':0b0100, 'left':0b0010, 'right':0b0001}.get(key,0b0000)
+            if self.default_navpoint and d & self.default_dirs \
+               and len([i for i in self.buttons if self.buttons[i].moused]) == 0:
+                self.default_navpoint.set_hl(1)
+
+    def addButton(self, name, text, pos, size, func = None, args = None):
+        self.buttons[name] = UIButton(text, pos, size)
+        self.setButtonFunc(name, func, args)
+
+    def getButton(self, name):
+        return self.buttons[name]
+
+    def setButtonFunc(self, name, func = None, args = None):
+        if func:
+            self.buttons[name].func_onclick = func
+        if args:
+           self.buttons[name].args = args
+
+    def setButtonKBNav(self, name, target_name, dirs = 0b0000):
+        """
+        setButtonKBNav(self, name, target_name, dirs = 0b0000)
+        - target_name: name of button to navigate to when dir pressed
+        - dirs: 4 bits describing which directional buttons trigger navigation
+        0b1xxx: up, 0bx1xx: down, 0bxx1x: left, 0bxxx1: right
+        """
+        # yes, this is exceedingly dumb. so sue me.
+        if dirs & 0b1000:
+            self.buttons[name].set_kbnav(0, self.buttons.get(target_name, None))
+        if dirs & 0b0100:
+            self.buttons[name].set_kbnav(1, self.buttons.get(target_name, None))
+        if dirs & 0b0010:
+            self.buttons[name].set_kbnav(2, self.buttons.get(target_name, None))
+        if dirs & 0b0001:
+            self.buttons[name].set_kbnav(3, self.buttons.get(target_name, None))
+
+    def setDefaultNavpoint(self, name, dirs = 0b1111):
+        """
+        Sets which button will highlight on keypress if no buttons are highlighted.
+        - dirs: controls which directional buttons trigger this (all on by default)
+        """
+        self.default_navpoint = self.buttons[name]
+        self.default_dirs = dirs
+
+    def draw(self, surface):
+        [self.buttons[i].draw(surface) for i in self.buttons]
+
+
 class PauseScreen:
     def __init__(self):
-        self.buttons = [ # placeholder for now
-            UIButton("resume", [screensize[0]/2, screensize[1]/2-30], [100,30], pygame.mixer.music.unpause),
-            UIButton("quit", [screensize[0]/2, screensize[1]/2+30], [100,30], sys.exit),
-            ]
-        self.buttons[0].set_kbnav(1, self.buttons[1])
-        self.buttons[1].set_kbnav(0, self.buttons[0])
-        self.buttons[0].set_kbnav(0, self.buttons[1])
-        self.buttons[1].set_kbnav(1, self.buttons[0])
         self.bg = pygame.Surface(screensize).convert_alpha(surface)
         self.bg.fill([0,0,0])
         self.bg_image = pygame.transform.scale(pausebg, screensize).convert_alpha(surface)
         self.paused_at = 0
         self.header = font_pauseheader.render("Paused", 0, [255,255,255])
+        
+        self.buttonMenu = ButtonMenu()
+        self.buttonMenu.addButton('resume', "resume", [screensize[0]/2, screensize[1]/2-30], [100,30], pygame.mixer.music.unpause)
+        self.buttonMenu.addButton('quit', "quit", [screensize[0]/2, screensize[1]/2+30], [100,30], sys.exit)
+        self.buttonMenu.setButtonKBNav('resume', 'quit', 0b1100)
+        self.buttonMenu.setButtonKBNav('quit', 'resume', 0b1100)
+        self.buttonMenu.setDefaultNavpoint('resume')
 
     def update(self, events):
         for event in events:
-            if event.type == pygame.MOUSEMOTION:
-                [i.on_mouse_move(event) for i in self.buttons]
-            elif event.type == pygame.MOUSEBUTTONUP:
-                [i.on_click(event) for i in self.buttons]
-            elif event.type == pygame.KEYDOWN:
-                [i.on_key_press(event) for i in self.buttons]
-                if len([i for i in self.buttons if i.moused]) == 0:
-                    self.buttons[0].set_hl(1)
+            self.buttonMenu.handleEvent(event)
 
     def draw(self, screen):
         interp = 1-min(1, (time.time()-self.paused_at)/0.15)
@@ -226,7 +288,7 @@ class PauseScreen:
             ])
         screen.blit(self.bg, [0,0])
         screen.blit(self.header, [30-(screensize[0]/4)*interp,20])
-        [i.draw(screen) for i in self.buttons]
+        self.buttonMenu.draw(screen)
 
 
 class ChartSelectScreen:
@@ -253,15 +315,12 @@ class ChartSelectScreen:
                         "By " + meta.get('chart_author', 'Unknown Author'), 0, [255,255,255])
                 }
             )
-            
-        self.buttons = [
-            UIButton(
-                "start",
-                [screensize[0]/2, screensize[1]-30],
-                [100,30]
-            )
-        ]
-        self.buttons[0].set_hl(1)
+
+        self.buttonMenu = ButtonMenu()
+        self.buttonMenu.addButton('start', "start", [screensize[0]/2, screensize[1]-30], [100, 30])
+        self.buttonMenu.setDefaultNavpoint('start', dirs=0b0011)
+        self.buttonMenu.default_navpoint.set_hl(1)
+        
         self.index = 0
         self.last_scroll = 0
         self.direction = 1
@@ -269,14 +328,11 @@ class ChartSelectScreen:
         #self.songs[self.index]['preview'].play(fade_ms=500)
 
     def update(self, events):
-        self.buttons[0].args = [self.songs[self.index]['path']]
+        self.buttonMenu.setButtonFunc('start', args=[self.songs[self.index]['path']])
         for event in events:
+            self.buttonMenu.handleEvent(event)
             if event.type == pygame.KEYDOWN:
                 key = misc.buttons.get(event.key, None)
-                [i.on_key_press(event) for i in self.buttons]
-                if len([i for i in self.buttons if i.moused]) == 0 and \
-                   key in ['left', 'right']:
-                    self.buttons[0].set_hl(1)
                 if key == "down":
                     #self.songs[self.index]['preview'].fadeout(500)
                     self.last_scroll = time.time() if self.index != len(self.songs)-1 else 0
@@ -289,10 +345,6 @@ class ChartSelectScreen:
                     self.index = (self.index - 1) % len(self.songs)
                     #self.songs[self.index]['preview'].play(fade_ms=500)
                     self.direction = -1
-            if event.type == pygame.MOUSEMOTION:
-                [i.on_mouse_move(event) for i in self.buttons]
-            elif event.type == pygame.MOUSEBUTTONUP:
-                [i.on_click(event) for i in self.buttons]
 
     def draw(self, screen):
         interp = max(0,(0.15-(time.time()-self.last_scroll))/0.15)
@@ -332,7 +384,7 @@ class ChartSelectScreen:
             scroll += 30
         screen.blit(header, [30,20])
         screen.blit(author, [40, 20+header.get_height()])
-        [i.draw(screen) for i in self.buttons]
+        self.buttonMenu.draw(screen)
 
     def drawGL(self):
         pass

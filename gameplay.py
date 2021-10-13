@@ -48,7 +48,7 @@ class GameManager: # standard gameplay
 
         self.paused = False
         self.pauseScreen = ui.PauseScreen()
-        self.pauseScreen.buttons[0].func_onclick = self.unpause
+        self.pauseScreen.buttonMenu.setButtonFunc('resume', self.unpause)
 
         pygame.mixer.music.play()
 
@@ -129,8 +129,7 @@ class GameManager: # standard gameplay
             self.pauseScreen.draw(screen)
 
     def drawGL(self):
-        glEnable(GL_DEPTH_TEST)
-        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_LIGHTING)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(45, (ui.screensize[0]/ui.screensize[1]), 0.1, 50.0)
