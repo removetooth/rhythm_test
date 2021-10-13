@@ -197,6 +197,8 @@ class GameManager: # standard gameplay
         self.bar_no += 1
         next_bar = self.song['bars'][self.bar_no] if self.bar_no < len(self.song['bars']) \
                    else {'text':'','type':'break','length':1}
+        next_next_bar = self.song['bars'][self.bar_no+1] if self.bar_no+1 < len(self.song['bars']) \
+                   else {'text':'','type':'break','length':1}
         if self.bar['type'] == 'call':    # holy shit this is the worst
             self.next_input[0] = 0
             self.icons_enabled[0] = False
@@ -206,15 +208,18 @@ class GameManager: # standard gameplay
             self.next_input[1] = 0
             self.icons_enabled[1] = False
 
+        # TODO: figure out a COMPETENT way to draw the dots
         if next_bar['type'] == 'call':
             self.next_ghost_input[0] = 0
+            ui.draw_dots(self.tl_dots_surf, next_bar['length'], 0)
+            ui.draw_dots(self.tl_dots_surf, next_next_bar['length'], 1)
         elif next_bar['type'] == 'response':
             self.next_ghost_input[1] = 0
+            ui.draw_dots(self.tl_dots_surf, next_bar['length'], 1)
 
         if next_bar['type'] == 'break':
             self.tl_dots_surf.fill(ui.alpha)
-        else:
-            ui.draw_dots(self.tl_dots_surf, next_bar['length'])
+            
 
         self.bar = next_bar
         

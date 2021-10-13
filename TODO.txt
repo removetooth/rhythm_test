@@ -1,4 +1,3 @@
-- allow ui.draw_dots to draw call and response lines separately - they may have varying length
 - do the fucking scoring system already
 - replace string keybind references with constants
 - ui.ButtonMenu
@@ -22,5 +21,6 @@
 - rename misc.buttons to misc.binds
 - rename ui.surface to literally anything less ambiguous
 - untangle the clusterfuck that is start_new_bar
+	- also figure out a way to *competently* draw dots before the bar comes up
 - move gameplay opengl draw calls to somewhere inside the chart
 	- this is literally arbitrary code execution so try to protect against nasty shenanigans
