@@ -50,16 +50,19 @@ def get_pos_on_tl(surface, length, beat, player):
     y += surface.get_height() / 2 * player
     return [int(x), int(y)]
 
-def draw_dots(surface, length):
+def draw_dots(surface, length, player = 0):
     # used for the timeline at the top
     length = int(length * 4)
-    surface.fill(alpha)
+    pygame.draw.rect(
+        surface, alpha,
+        [0, int(surface.get_height()/2)* player,
+         surface.get_width(), int(surface.get_height()/2)]
+        )
     for i in range(length):
         radius = 4
         if i % 4 == 0:
             radius = 7
-        pygame.draw.circle(surface, [255,255,255], get_pos_on_tl(surface,length/4,i/4,0),radius)
-        pygame.draw.circle(surface, [255,255,255], get_pos_on_tl(surface,length/4,i/4,1),radius)
+        pygame.draw.circle(surface, [255,255,255], get_pos_on_tl(surface,length/4,i/4,player),radius)
 
 def surfaceToTexture( pygame_surface, texture ):
     rgb_surface = pygame.image.tostring( pygame_surface, 'RGBA')
@@ -103,7 +106,7 @@ class HUDBeat:
                                     self.pos[1] - self.surface.get_height()/2])
 
 class UIButton:
-    def __init__(self, text, pos, size, func_onclick, args = []):
+    def __init__(self, text, pos, size, func_onclick = print, args = []):
         self.size = size
         self.center = pos
         self.corner = [
@@ -255,9 +258,7 @@ class ChartSelectScreen:
             UIButton(
                 "start",
                 [screensize[0]/2, screensize[1]-30],
-                [100,30],
-                print,
-                ["???"]
+                [100,30]
             )
         ]
         self.buttons[0].set_hl(1)
