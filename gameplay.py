@@ -152,15 +152,15 @@ class GameManager: # standard gameplay
 
     def handle_input(self, bar, player = 1, pre = False): # yes, this is awful. i'll try to iterate on it
         for event in self.events:
-            if event.type == pygame.KEYDOWN and event.key in misc.buttons:
+            if event.type == pygame.KEYDOWN and event.key in misc.binds:
                 barpos = self.bar_beat - bar['length']*pre
-                button = misc.buttons[event.key]
+                button = misc.binds[event.key]
                 if button in bar['sfx']:
                     if self.no_presses[0] == button:
                         self.no_presses[1] = (self.no_presses[1] + 1) % len(bar['sfx'][button])
                     else:
                         self.no_presses = [button, 0]
-                    self.sounds[bar['sfx'][misc.buttons[event.key]][self.no_presses[1]]].play()
+                    self.sounds[bar['sfx'][misc.binds[event.key]][self.no_presses[1]]].play()
                     self.praise[0] = PRAISE_MISS
                     target_input = None
                     for i in bar['inputs']: # iterate on / figure out a better, cleaner implementation for this

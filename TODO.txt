@@ -2,7 +2,6 @@
 - replace string keybind references with constants
 - figure out any kind of faster, cleaner way to make pygame surfaces work within opengl
 - rename misc.buttons to misc.binds
-- rename ui.surface to literally anything less ambiguous
 - untangle the clusterfuck that is start_new_bar
 	- also figure out a way to *competently* draw dots before the bar comes up
 - move gameplay opengl draw calls to somewhere inside the chart

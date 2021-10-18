@@ -90,7 +90,7 @@ while 1:
             pygame.quit()
             sys.exit()
     stateManager.update(events)
-    stateManager.draw(ui.surface)
+    stateManager.draw(ui.screen_surface)
     
     pygame.display.flip()
     pygame.display.set_caption(str(int(clock.get_fps())) + " FPS")

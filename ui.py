@@ -34,7 +34,7 @@ praise = {
     PRAISE_MISINPUT:font_praise.render('wrong button', 0, [200,100,0])
     }
 
-surface = pygame.Surface(screensize, pygame.SRCALPHA)
+screen_surface = pygame.Surface(screensize, pygame.SRCALPHA)
 
 def get_pos_on_tl(surface, length, beat, player):
     # used to find the graphical position on the timeline,
@@ -83,7 +83,7 @@ class HUDBeat:
         self.start_time = start_time
         self.pos = pos
         self.transparent = ghost
-        self.surface = pygame.Surface([[50,50], [40,40]][ghost]).convert_alpha(surface)
+        self.surface = pygame.Surface([[50,50], [40,40]][ghost]).convert_alpha(screen_surface)
         self.surface.set_alpha([255, 0][ghost])
         self.surface.fill(alpha)
 
@@ -121,7 +121,7 @@ class UIButton:
         self.args = args
         self.last_interaction = 0
         self.moused = False
-        self.surface = pygame.Surface(size).convert_alpha(surface)
+        self.surface = pygame.Surface(size).convert_alpha(screen_surface)
         self.kbnav = [None,None,None,None]
         self.inhibit_next_kb_event = False
 
@@ -140,10 +140,10 @@ class UIButton:
             self.set_hl(0)
 
     def on_key_press(self, event):
-        key = misc.buttons.get(event.key, None)
+        key = misc.binds.get(event.key, None)
         if self.moused and not self.inhibit_next_kb_event:
             if key in ['up', 'down', 'left', 'right']:
-                d = {'up':0, 'down':1, 'left':2, 'right':3}[misc.buttons[event.key]]
+                d = {'up':0, 'down':1, 'left':2, 'right':3}[misc.binds[event.key]]
                 if self.kbnav[d]:
                     self.set_hl(0)
                     self.kbnav[d].set_hl(1)
@@ -209,7 +209,7 @@ class ButtonMenu:
             
         elif event.type == pygame.KEYDOWN:
             [self.buttons[i].on_key_press(event) for i in self.buttons]
-            key = misc.buttons.get(event.key, None)
+            key = misc.binds.get(event.key, None)
             d = {'up':0b1000, 'down':0b0100, 'left':0b0010, 'right':0b0001}.get(key,0b0000)
             if self.default_navpoint and d & self.default_dirs \
                and len([i for i in self.buttons if self.buttons[i].moused]) == 0:
@@ -259,9 +259,9 @@ class ButtonMenu:
 
 class PauseScreen:
     def __init__(self):
-        self.bg = pygame.Surface(screensize).convert_alpha(surface)
+        self.bg = pygame.Surface(screensize).convert_alpha(screen_surface)
         self.bg.fill([0,0,0])
-        self.bg_image = pygame.transform.scale(pausebg, screensize).convert_alpha(surface)
+        self.bg_image = pygame.transform.scale(pausebg, screensize).convert_alpha(screen_surface)
         self.paused_at = 0
         self.header = font_pauseheader.render("Paused", 0, [255,255,255])
         
@@ -332,7 +332,7 @@ class ChartSelectScreen:
         for event in events:
             self.buttonMenu.handleEvent(event)
             if event.type == pygame.KEYDOWN:
-                key = misc.buttons.get(event.key, None)
+                key = misc.binds.get(event.key, None)
                 if key == "down":
                     #self.songs[self.index]['preview'].fadeout(500)
                     self.last_scroll = time.time() if self.index != len(self.songs)-1 else 0
