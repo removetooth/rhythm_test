@@ -46,6 +46,9 @@ class GameManager: # standard gameplay
         self.last_beat = 0
         self.last_bar_change = 0
 
+        self.score = 0
+        self.player_inputs = []
+
         self.paused = False
         self.pauseScreen = ui.PauseScreen()
         self.pauseScreen.buttonMenu.setButtonFunc('resume', self.unpause)
@@ -182,6 +185,7 @@ class GameManager: # standard gameplay
                     misc.sfx_oops.play()
                     self.praise[0] = PRAISE_OOPS
                 self.praise[1] = self.pos
+                self.player_inputs.append({"beat": barpos, "button": button})
                 self.tl_beats.append(ui.HUDBeat(
                     button,
                     self.pos,
@@ -203,6 +207,9 @@ class GameManager: # standard gameplay
             self.icons_enabled[0] = False
         elif self.bar['type'] == 'response':
             misc.sfx_good.play()
+            self.score += score(self.player_inputs, self.bar['inputs'], self.song['bpm'])
+            print("Score:", self.score)
+            self.player_inputs = []
             self.tl_beats = []
             self.next_input[1] = 0
             self.icons_enabled[1] = False
@@ -307,10 +314,14 @@ bar_prep_handlers = {
     "break": GameManager.bar_break_prep
     }
 
-def score():
-    # scoring system, i'll work on it in a bit
+def score(playerBeats, cpuBeats, bpm):
+    # placeholder
+    print(playerBeats)
+    print(cpuBeats)
+    print()
     return 0
 
+# temporary placeholder bullshit for opengl demoscene
 vertices = (
     (1, -1, -1),
     (1, 1, -1),
