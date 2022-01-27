@@ -39,10 +39,8 @@ screen_surface = pygame.Surface(screensize, pygame.SRCALPHA)
 def get_pos_on_tl(surface, length, beat, player):
     # used to find the graphical position on the timeline,
     # based on t, length of bar, and size of surface
-    if length <= 4:
-        y = surface.get_height()/4
-    else:
-        y = surface.get_height()/6 * (int(beat*4/16)+1)
+    num_bars = int(math.ceil(length/4))
+    y = surface.get_height()/(2*(num_bars+1)) * (int(beat*4/16)+1)
     if beat >= 0:
         x = (surface.get_width()/17) * (beat*4%16 + 1)
     else:
@@ -152,6 +150,10 @@ class UIButton:
 
     def draw(self, screen):
         self.inhibit_next_kb_event = False
+        self.corner = [
+            int(self.center[0] - self.size[0] / 2),
+            int(self.center[1] - self.size[1] / 2)
+            ]
         self.surface.fill(alpha)
         if self.moused:
             interp = min(1,(time.time()-self.last_interaction)/0.1)
@@ -228,6 +230,9 @@ class ButtonMenu:
         if args:
            self.buttons[name].args = args
 
+    def setButtonCenter(self, name, pos):
+        self.buttons[name].center = pos
+
     def setButtonKBNav(self, name, target_name, dirs = 0b0000):
         """
         setButtonKBNav(self, name, target_name, dirs = 0b0000)
@@ -255,6 +260,10 @@ class ButtonMenu:
 
     def draw(self, surface):
         [self.buttons[i].draw(surface) for i in self.buttons]
+
+
+    def removeAllButtons(self):
+        self.buttons = {}
 
 
 class PauseScreen:
@@ -317,7 +326,10 @@ class ChartSelectScreen:
             )
 
         self.buttonMenu = ButtonMenu()
-        self.buttonMenu.addButton('start', "start", [screensize[0]/2, screensize[1]-30], [100, 30])
+        self.buttonMenu.addButton('start', "Start", [screensize[0]/2, screensize[1]-30], [100, 30])
+        self.buttonMenu.addButton('editor', "Open in editor", [4*screensize[0]/5, screensize[1]-30], [170, 30])
+        self.buttonMenu.setButtonKBNav('start', 'editor', 0b0011)
+        self.buttonMenu.setButtonKBNav('editor', 'start', 0b0011)
         self.buttonMenu.setDefaultNavpoint('start', dirs=0b0011)
         self.buttonMenu.default_navpoint.set_hl(1)
         
@@ -329,6 +341,7 @@ class ChartSelectScreen:
 
     def update(self, events):
         self.buttonMenu.setButtonFunc('start', args=[self.songs[self.index]['path']])
+        self.buttonMenu.setButtonFunc('editor', args=[self.songs[self.index]['path']])
         for event in events:
             self.buttonMenu.handleEvent(event)
             if event.type == pygame.KEYDOWN:

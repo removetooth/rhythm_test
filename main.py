@@ -11,7 +11,7 @@ from OpenGL.GLU import *
 import pygame
 pygame.init()
 
-import misc, ui, gameplay
+import misc, ui, gameplay, editor
 from constants import *
 
 pygame.mixer.init()
@@ -22,8 +22,7 @@ start_time = time.time()
 
 class StateManager:
     def __init__(self):
-        self.manager = ui.ChartSelectScreen()
-        self.manager.buttonMenu.setButtonFunc('start', self.startGame)
+        self.quitToSelection()
         
     def update(self, events):
         self.manager.update(events)
@@ -73,10 +72,15 @@ class StateManager:
         pygame.mixer.music.stop()
         self.manager = gameplay.GameManager(chart)
         self.manager.pauseScreen.buttonMenu.setButtonFunc('quit', self.quitToSelection)
+
+    def openEditor(self, chart):
+        self.manager = editor.EditorManager(chart)
+        self.manager.menu.setButtonFunc('return_to_menu', self.quitToSelection)
         
     def quitToSelection(self):
         self.manager = ui.ChartSelectScreen()
         self.manager.buttonMenu.setButtonFunc('start', self.startGame)
+        self.manager.buttonMenu.setButtonFunc('editor', self.openEditor)
 
 screentexture = glGenTextures(1)
 
