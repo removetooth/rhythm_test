@@ -78,6 +78,8 @@ class StateManager:
         self.manager.menu.setButtonFunc('return_to_menu', self.quitToSelection)
         
     def quitToSelection(self):
+        pygame.mixer.stop()
+        pygame.mixer.music.stop()
         self.manager = ui.ChartSelectScreen()
         self.manager.buttonMenu.setButtonFunc('start', self.startGame)
         self.manager.buttonMenu.setButtonFunc('editor', self.openEditor)

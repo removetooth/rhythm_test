@@ -163,7 +163,7 @@ class GameManager: # standard gameplay
                         self.no_presses[1] = (self.no_presses[1] + 1) % len(bar['sfx'][button])
                     else:
                         self.no_presses = [button, 0]
-                    self.sounds[bar['sfx'][misc.binds[event.key]][self.no_presses[1]]].play()
+                    self.sounds[bar['sfx'][button][self.no_presses[1]]].play()
                     self.praise[0] = PRAISE_MISS
                     target_input = None
                     for i in bar['inputs']: # iterate on / figure out a better, cleaner implementation for this
