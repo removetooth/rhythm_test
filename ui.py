@@ -192,6 +192,108 @@ class UIButton:
             print("set_kbnav: button must be type UIButton or NoneType")
 
 
+class TextElement:
+    def __init__(self, font=font_caption, text=None, anchor_center=True, position = [0,0], color=[255,255,255]):
+        self.font = font
+        self.anchor_center = anchor_center
+        self.color = color
+        self.surface = font.render(text, 0, color) if text else pygame.Surface([0,0])
+        self.corner = [position[0] - int(self.surface.get_width()/2) if anchor_center else 0,
+                       position[1] - int(self.surface.get_height()/2) if anchor_center else 0]
+
+    def update(self):
+        self.corner = [position[0] - int(self.surface.get_width()/2) if anchor_center else 0,
+                       position[1] - int(self.surface.get_height()/2) if anchor_center else 0]
+
+    def draw(self, surface):
+        surface.blit(self.surface, self.corner)
+
+    def edit_text(self, font=None, text=None, anchor_center=None, position=None, color=None):
+        if font: self.font = font
+        if anchor_center: self.anchor_center = anchor_center
+        if color: self.color = color
+        if position: self.position = position
+        if text: self.surface = font.render(text, 0, color)
+
+
+class TextEntry:
+    def __init__(self, pos, size, default_text=None, anchor_center=False):
+        self.pos = [int(pos[0]), int(pos[1])]
+        self.size = [int(size[0]), int(size[1])]
+        self.text = default_text if default_text else ""
+        self.selected = False
+        self.surface = pygame.Surface(self.size).convert_alpha(screen_surface)
+        self.text_surf = pygame.Surface([0,0]).convert_alpha(screen_surface)
+        self.caps = False
+        self.shiftcodes = {96:126,49:33,50:64,51:35,52:36,53:37,54:94,55:38,56:42,57:40,48:41,45:95,61:43,91:123,93:125,92:124,59:58,39:34,44:60,46:62,47:63}
+
+        self.desel_func = self.dummy
+        self.desel_args = []
+        self.update_func = self.dummy
+        self.update_args = []
+
+        self.corner = [int(self.pos[0] - self.size[0]/2),
+                       int(self.pos[1] - self.size[1]/2)] if anchor_center else self.pos
+
+    def update(self, event):
+        if event.type == pygame.MOUSEBUTTONUP:
+            if event.pos[0] in range(self.corner[0], self.corner[0]+self.size[0]+1) \
+               and event.pos[1] in range(self.corner[1], self.corner[1]+self.size[1]+1):
+                self.selected = True
+            else:
+                self.selected = False
+                self.desel_func(*self.desel_args)
+            
+        if event.type == pygame.KEYDOWN:
+            if event.key in [pygame.K_LSHIFT, pygame.K_RSHIFT]:
+                self.caps = True
+            if event.key == pygame.K_BACKSPACE:
+                self.setText(self.text[0:len(self.text)-1])
+            elif event.key == pygame.K_RETURN:
+                self.selected = False
+                self.desel_func(*self.desel_args)
+            elif event.key in range(0x110000) and self.selected:
+                newchr = event.key
+                if self.caps:
+                    if newchr in range(97,123):
+                        newchr -= 32
+                    elif newchr in self.shiftcodes:
+                        newchr = self.shiftcodes[newchr]
+                self.setText(self.text + chr(newchr))
+                
+        if event.type == pygame.KEYUP:
+            if event.key in [pygame.K_LSHIFT, pygame.K_RSHIFT]:
+                self.caps = False
+
+    def draw(self, surface):
+        self.surface.fill([0,0,0,150 if self.selected else 100])
+        self.surface.blit( self.text_surf,
+            [5 - (max(0, self.text_surf.get_width() - self.size[0] + 10) if self.selected else 0),
+             self.size[1]/2 - self.text_surf.get_height()/2]
+            )
+        surface.blit(self.surface, self.corner)
+
+    def getText(self):
+        return self.text
+
+    def setText(self, text, trigger_func=True):
+        self.text = text
+        self.text_surf = font_caption.render(self.text, 0, [255,255,255])
+        if trigger_func:
+            self.update_func(*self.update_args)
+
+    def setFuncOnDeselect(self, func=None, args=[]):
+        self.desel_func = func if func else self.dummy
+        self.desel_args = []
+
+    def setFuncOnTextUpdate(self, func=None, args=[]):
+        self.update_func = func if func else self.dummy
+        self.update_args = []
+
+    def dummy(self):
+        pass
+    
+
 class ButtonMenu:
     def __init__(self):
         self.buttons = {}

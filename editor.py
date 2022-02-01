@@ -46,21 +46,24 @@ class EditorManager:
         self.menu.addButton('bar_next', '>', [ui.screensize[0] - 20, 20], [30,30], self.navigateBars, [1])
         
         self.glyphUIPos = [self.sfxListSurface.get_width() + 20, ui.screensize[1]/4 + ui.tl_size[1]/2 + 20]
-        self.menu.addButton('glyph_prev', '<', [self.glyphUIPos[0], self.glyphUIPos[1]+35], [30,30], self.navigateGlyphs, [-1])
-        self.menu.addButton('glyph_next', '>', [self.glyphUIPos[0]+60, self.glyphUIPos[1]+35], [30,30], self.navigateGlyphs, [1])
-        self.menu.addButton('add_beat', '+', [self.glyphUIPos[0]+90, self.glyphUIPos[1]+35], [30,30], self.addBeatAtCursor)
-        self.menu.addButton('remove_beat', '-', [self.glyphUIPos[0]+120, self.glyphUIPos[1]+35], [30,30], self.deleteBeatAtCursor)
+        self.editMenu.addButton('glyph_prev', '<', [self.glyphUIPos[0], self.glyphUIPos[1]+35], [30,30], self.navigateGlyphs, [-1])
+        self.editMenu.addButton('glyph_next', '>', [self.glyphUIPos[0]+60, self.glyphUIPos[1]+35], [30,30], self.navigateGlyphs, [1])
+        self.editMenu.addButton('add_beat', '+', [self.glyphUIPos[0]+90, self.glyphUIPos[1]+35], [30,30], self.addBeatAtCursor)
+        self.editMenu.addButton('remove_beat', '-', [self.glyphUIPos[0]+120, self.glyphUIPos[1]+35], [30,30], self.deleteBeatAtCursor)
         self.glyphBeat = ui.HUDBeat(self.glyphs[self.selectedGlyph], self.t, [self.glyphUIPos[0]+30, self.glyphUIPos[1]+35])
 
-        self.menu.addButton('tab_edit', 'EDIT', [self.glyphUIPos[0]+20, self.glyphUIPos[1]], [70,30])
-        self.menu.addButton('tab_sounds', 'ORDER', [self.glyphUIPos[0]+100, self.glyphUIPos[1]], [70,30])
-        self.menu.addButton('tab_meta', 'CHART', [self.glyphUIPos[0]+180, self.glyphUIPos[1]], [70,30])
+        self.menu.addButton('tab_edit', 'EDIT', [self.glyphUIPos[0]+20, self.glyphUIPos[1]], [70,30], self.setCurrentMenu, [self.editMenu])
+        self.menu.addButton('tab_sounds', 'ORDER', [self.glyphUIPos[0]+100, self.glyphUIPos[1]], [70,30], self.setCurrentMenu, [self.soundOrderMenu])
+        self.menu.addButton('tab_meta', 'CHART', [self.glyphUIPos[0]+180, self.glyphUIPos[1]], [70,30], self.setCurrentMenu, [self.chartInfoMenu])
 
         self.menu.addButton('save_chart', 'Save', [ui.screensize[0] - 45, ui.screensize[1] - 20], [70,30], self.saveChart)
         self.menu.addButton('return_to_menu', 'Exit', [ui.screensize[0] - 125, ui.screensize[1] - 20], [70,30])
         self.menu.addButton('preview', 'Prvw', [ui.screensize[0] - 205, ui.screensize[1] - 20], [70,30], self.togglePlayback)
         
         self.sfxList = ui.ButtonMenu()
+
+        self.textentrytest = ui.TextEntry([2*ui.screensize[0]/3,self.glyphUIPos[1]+72], [2*ui.screensize[0]/3-14, 30], anchor_center = True)
+        self.textentrytest.setFuncOnTextUpdate(func = self.updateBarText)
 
         if chart:
             self.loadChart(chart)
@@ -100,15 +103,16 @@ class EditorManager:
                     self.playback_next_input += 1
                                                  
             if self.cursor >= self.bar['length']:
-                print(pygame.mixer.music.get_pos())
                 pygame.mixer.music.stop()
                 self.cursor = 0
 
         for event in events:
             self.sfxList.handleEvent(event)
             self.menu.handleEvent(event)
+            self.currentMenu.handleEvent(event)
+            self.textentrytest.update(event)
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
+                if False:#event.key == pygame.K_SPACE: # disabled for now since it doesn't play nice with text entry
                     self.togglePlayback()
                 
                 target = self.cursor
@@ -125,6 +129,7 @@ class EditorManager:
         
         self.sfxListSurface.fill([100,100,100])
         self.sfxList.draw(self.sfxListSurface)
+        self.textentrytest.draw(screen)
         screen.blit(self.sfxListSurface, [0, 0-self.sfxMenuPos])
 
         try:
@@ -143,6 +148,7 @@ class EditorManager:
         screen.blit(self.bar_header, [2*ui.screensize[0]/3 - self.bar_header.get_width()/2, 20 - self.bar_header.get_height()/2])
         screen.blit(self.sound_header, [self.glyphUIPos[0]+140, self.glyphUIPos[1]+35-self.sound_header.get_height()/2])
         self.menu.draw(screen)
+        self.currentMenu.draw(screen)
 
     def drawGL(self):
         pass
@@ -193,6 +199,7 @@ class EditorManager:
                 self.beats.append(ui.HUDBeat(beat['button'], self.t, pos))
 
         self.bar_header = ui.font_caption.render('Bar ' + str(index) + ': ' + self.bar['type'], 0, [255, 255, 255])
+        self.textentrytest.setText(self.bar['text'], trigger_func = False)
     
     def navigateBars(self, delta):
         delta = 0 if not delta else int(delta/abs(delta))
@@ -202,7 +209,6 @@ class EditorManager:
             self.loadBar(self.bar_no + delta)
             if delta < 0:
                 self.playback_start_beat -= self.bar['length']
-            print(self.playback_start_beat)
 
     def navigateGlyphs(self, delta):
         target = self.selectedGlyph + delta
@@ -249,6 +255,9 @@ class EditorManager:
         self.song['bars'][self.bar_no]['length'] -= self.increment
         self.loadBar(self.bar_no)
 
+    def updateBarText(self):
+        self.song['bars'][self.bar_no]['text'] = self.textentrytest.getText()
+
     def togglePlayback(self):
         if pygame.mixer.music.get_busy():
             pygame.mixer.music.stop()
@@ -256,9 +265,10 @@ class EditorManager:
             self.playback_started_time = time.time()
             interval = 60 / self.song['bpm']
             start = interval * self.playback_start_beat + self.song['offset']
-            print(interval)
-            print(start)
             pygame.mixer.music.play(start = start)
         self.cursor = 0
         self.playback_next_input = 0
         self.playback_no_presses = [None, 0]
+
+    def setCurrentMenu(self, menu):
+        self.currentMenu = menu
