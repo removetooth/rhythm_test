@@ -299,6 +299,9 @@ class ButtonMenu:
         self.buttons = {}
         self.default_navpoint = None
         self.default_dirs = 0b1111
+        self.textboxes = {}
+        self.in_textbox = False
+        self.textelements = {}        
 
     def handleEvent(self, event):
         """
