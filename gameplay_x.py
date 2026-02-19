@@ -36,12 +36,6 @@ class GameManager: # standard gameplay
         self.next_input = [0,0]
         self.next_ghost_input = [0,0]
 
-        self.misses = 0
-        self.timedinputs = 0
-        self.funkyinputs = 0
-        self.coolmode = 0
-        self.num_suggest_buttons = 0
-
         self.interval = 60 / self.song['bpm']
         self.pulsed = 0
         self.beat = 0
@@ -51,8 +45,6 @@ class GameManager: # standard gameplay
         self.bar_beat = 0
         self.last_beat = 0
         self.last_bar_change = 0
-        self.note = 0
-        self.nearesetnote = 0
 
         self.score = 0
         self.player_inputs = []
@@ -83,7 +75,6 @@ class GameManager: # standard gameplay
         
         self.pos = pygame.mixer.music.get_pos() / 1000 - self.song['offset']
         self.beat = self.pos / self.interval
-        self.note = (self.pos / self.interval) * 4
         if self.beat - self.last_beat > 0.5: # prevent unpause jank
             return
         self.last_beat = self.beat
@@ -172,34 +163,26 @@ class GameManager: # standard gameplay
                         self.no_presses[1] = (self.no_presses[1] + 1) % len(bar['sfx'][button])
                     else:
                         self.no_presses = [button, 0]
-                    self.sounds[bar['sfx'][misc.binds[event.key]][self.no_presses[1]]].play()
+                    self.sounds[bar['sfx'][button][self.no_presses[1]]].play()
                     self.praise[0] = PRAISE_MISS
                     target_input = None
+                    for i in bar['inputs']: # iterate on / figure out a better, cleaner implementation for this
+                        if abs(barpos - i['beat']) < 1/32 and self.praise[0] < PRAISE_PERFECT:
+                            self.praise[0] = PRAISE_PERFECT
+                            target_input = i['button']
+                        elif abs(barpos - i['beat']) < 1/16 and self.praise[0] < PRAISE_GREAT:
+                            self.praise[0] = PRAISE_GREAT
+                            target_input = i['button']
                         elif abs(barpos - i['beat']) < 1/8 and self.praise[0] < PRAISE_GOOD:
-                    if (round(self.note-0.33)% 2) == 0:
-                        if abs(self.note - round(self.note-0.33) < 0.33):
                             self.praise[0] = PRAISE_GOOD
-                            self.timedinputs += 1
-                            
-                        else:
-                            self.praise[0] = PRAISE_MISS
-                            self.misses += 1
-                    else:
-                        if abs(self.note - round(self.note-0.33) < 0.30):
-                            self.praise[0] = PRAISE_GOOD
-                            self.timedinputs += 1
-                        else:
-                            if (self.note - (round(self.note-0.33)) > 0.030) and (self.note - (round(self.note-0.33)) < 0.53):
-                                self.praise[0] = PRAISE_PERFECT
-                                self.funkyinputs += 1
-                                self.timedinputs += 1
-                            else:
-                                self.praise[0] = PRAISE_MISS
-                                self.misses += 1
-                    
+                            target_input = i['button']
+                        elif abs(barpos - i['beat']) < 1/4 and self.praise[0] < PRAISE_OK:
+                            self.praise[0] = PRAISE_OK
+                            target_input = i['button']
+                    if button != target_input and self.praise[0] != PRAISE_MISS:
+                        self.praise[0] = PRAISE_MISINPUT
                 else:
                     misc.sfx_oops.play()
-                    self.misses += 1
                     self.praise[0] = PRAISE_OOPS
                 self.praise[1] = self.pos
                 self.player_inputs.append({"beat": barpos, "button": button})
@@ -224,15 +207,12 @@ class GameManager: # standard gameplay
             self.icons_enabled[0] = False
         elif self.bar['type'] == 'response':
             misc.sfx_good.play()
-            self.score += score(self.player_inputs, self.bar['inputs'], self.song['bpm'],self.misses,self.timedinputs,self.funkyinputs, len(self.bar['inputs']))
+            self.score += score(self.player_inputs, self.bar['inputs'], self.song['bpm'])
             print("Score:", self.score)
             self.player_inputs = []
             self.tl_beats = []
             self.next_input[1] = 0
             self.icons_enabled[1] = False
-            self.misses = 0
-            self.timedinputs = 0
-            self.funkyinputs = 0
 
         # TODO: figure out a COMPETENT way to draw the dots
         if next_bar['type'] == 'call':
@@ -334,55 +314,12 @@ bar_prep_handlers = {
     "break": GameManager.bar_break_prep
     }
 
-def score(playerBeats, cpuBeats, bpm, misses, timedinputs, funkyinputs, num_suggest_buttons):
+def score(playerBeats, cpuBeats, bpm):
     # placeholder
-    # TEACHER POINTS
-    teacher_points = 0
-    
-    if timedinputs > num_suggest_buttons:
-        teacher_points += (num_suggest_buttons * -1.5) + (num_suggest_buttons * 4.5)
-        timedinputs -= num_suggest_buttons
-        teacher_points += (timedinputs * 1.5)
-    else:
-        teacher_points += (num_suggest_buttons * -1.5) + (timedinputs * 4.5)
-
-    if timedinputs == 0 and misses == 0:
-        teacher_points = -100
-
-    #Check if teacher points is already less than 0 so we dont punish so harshly
-    if teacher_points > 0 or misses > num_suggest_buttons:
-        if misses > num_suggest_buttons:
-            teacher_points -= (num_suggest_buttons * 3.0)
-            misses -= num_suggest_buttons
-            teacher_points -= (misses * 4.5)
-        else:
-            teacher_points -= (misses*3.0)
-    
-    #To prevent ultimate destruction
-    if teacher_points < -300:
-        teacher_points = -300
-
-    #FUNKY POINTS
-    #Ok so like I'm just gonna make my own funky shit
-    funky_points = 0
-    funky_percentage = round(funkyinputs / num_suggest_buttons)
-    funky_points += round(((num_suggest_buttons * 35.5) * funky_percentage)*0.25)
-    #Raw funk
-
-    #Additional Bonus
-    if timedinputs > num_suggest_buttons and misses == 0:
-            teacher_points += (num_suggest_buttons * 10)
-    funky_points += (funkyinputs * 22.5)
-    print(num_suggest_buttons)
     print(playerBeats)
     print(cpuBeats)
-    print(misses)
-    print(timedinputs)
-    print(funkyinputs)
     print()
-    final_score = teacher_points + funky_points
-
-    return final_score
+    return 0
 
 # temporary placeholder bullshit for opengl demoscene
 vertices = (
