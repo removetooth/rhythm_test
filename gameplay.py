@@ -175,7 +175,6 @@ class GameManager: # standard gameplay
                     self.sounds[bar['sfx'][misc.binds[event.key]][self.no_presses[1]]].play()
                     self.praise[0] = PRAISE_MISS
                     target_input = None
-                        elif abs(barpos - i['beat']) < 1/8 and self.praise[0] < PRAISE_GOOD:
                     if (round(self.note-0.33)% 2) == 0:
                         if abs(self.note - round(self.note-0.33) < 0.33):
                             self.praise[0] = PRAISE_GOOD
